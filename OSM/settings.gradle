@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "OSM"
 include ':app'
+include ':lib'

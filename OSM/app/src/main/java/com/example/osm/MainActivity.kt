@@ -52,10 +52,11 @@ class MainActivity : AppCompatActivity() {
                 )
             ))
         val mapController = map.controller
-        mapController.setZoom(3.0)
+        mapController.setZoom(19.0)
+        val csBuilding = GeoPoint(48.74518,9.10665)
+        mapController.setCenter(csBuilding)
         val firstMarker = Marker(map)
-        val geoPoint = GeoPoint(23.0,53.0)
-        firstMarker.position = geoPoint
+        firstMarker.position = csBuilding
         firstMarker.title = "Test Marker"
         firstMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
         map.overlays.add(firstMarker)

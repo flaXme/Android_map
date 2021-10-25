@@ -159,24 +159,65 @@ public class Graph {
 		}
 		return max;
 	}
-
+	/**
+	 * Given a nodeId and four argument about the chosen area, check whether the node is in the area.
+	 * @param nodeId the node to be checked.
+	 * @param minLatitude	subgraph format:	(minLogi, maxLat)*--------*(maxLogi, maxLat)			^ Latitude
+	 * @param maxLatitude										 |		  |								|
+	 * @param minLongitude										 |		  |								|
+	 * @param maxLongitude						(minLogi, minLat)*--------*(minLogi, maxLat)			.------>Longitude
+	 * @return ture if the node is in the area, else false.
+	 */
 	public boolean nodeInSubgraph(final int nodeId,final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
 		//To be rebiuld.
-		return latitude[nodeId] >= minLatitude && latitude[nodeId] <= maxLatitude && longitude[nodeId] >= minLongitude && longitude[nodeId] <= maxLongitude;
+		boolean inLongitudeInterval = false;//whether the chosen node is in subgraph w.r.t. longitude
+		boolean inLatitudeInterval = false;//whether the chosen node is in subgraph w.r.t. latitude
+		//w.r.t. longitude:
+		//case 1: subgraph does not cross the 0 grad longitude
+		if(maxLongitude >= minLongitude){
+			if(longitude[nodeId] >= minLongitude && longitude[nodeId] <= maxLongitude){
+				inLongitudeInterval = true;
+			}else{
+				return false;//not in subgraph w.r.t. longitude
+			}
+		}else{
+		//case 2: subgraph does cross the 0 grad longitude
+			if(longitude[nodeId] >= minLongitude || longitude[nodeId] <= maxLongitude){
+				inLongitudeInterval = true;
+			}else{
+				return false;//not in subgraph w.r.t. longitude
+			}
+		}
+
+		//w.r.t. latitude:
+		if(latitude[nodeId] >= minLatitude && latitude[nodeId] <= maxLatitude){
+			inLatitudeInterval = true;
+		}else{
+			return false;
+		}
+		//if a node is in subgraph w.r.t. both longitude and latitude, then the node is indeed in the subgraph
+		return inLongitudeInterval && inLatitudeInterval;
 	}
 
 
-
+	/**
+	 * Given four argumens of the subgraph, compute and return the relevant nodes and edge information of the subgraph.
+	 * @param minLatitude see method "nodeInSubgraph"
+	 * @param maxLatitude
+	 * @param minLongitude
+	 * @param maxLongitude
+	 * @return the String representation of the subgraph
+	 */
 	public String calculateSubgraph(final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
-		String result = "\n";//the subgraph String starts with a blank line, for consistency reason.
+		String subgraphString = "\n";//the subgraph String starts with a blank line, for consistency reason.
 
-		// check all nodes wether they are part of the subgraph:
+		// check all nodes whether they are part of the subgraph:
 		int newNodeId = 0;//new nodeId of subgraph
-		HashMap<Integer,Integer> newIdOf = new HashMap();//mapping: oldNodeId -> newNodeId
+		HashMap<Integer,Integer> newIdOf = new HashMap<Integer,Integer>();//mapping: oldNodeId -> newNodeId
 		for(int i = 0; i<nodeNr;i++){
 			if(nodeInSubgraph(i, minLatitude, maxLatitude, minLongitude, maxLongitude)){
-				//node information format: oldId, newId, latitude, longitude
-				result = result + Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + "\n";
+				//node information format: oldId, newId, latitude, longitude. separate with one space
+				subgraphString = subgraphString + Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + "\n";
 				//save the new id of nodes in subgraph.
 				newIdOf.put(i, newNodeId);
 				//next new id of the node in subgraph, will be invalid(off by +1) after the last for-iteration
@@ -184,7 +225,7 @@ public class Graph {
 			}
 		}
 
-		//check all edges, wether they are part of the subgraph:(an edge is in the subgraph iff both of its ends are in the subgraph)
+		//check all edges, whether they are part of the subgraph:(an edge is in the subgraph iff both of its ends are in the subgraph)
 		int edgeCounter = 0;
 		for (int i = 0; i < edgeArray.length; i+=lengthOfEdgeElement) {
 			if(nodeInSubgraph(edgeArray[i], minLatitude, maxLatitude, minLongitude, maxLongitude) && nodeInSubgraph(edgeArray[i+1], minLatitude, maxLatitude, minLongitude, maxLongitude)){
@@ -192,14 +233,14 @@ public class Graph {
 				edgeCounter++;
 				int startNode = edgeArray[i];
 				int endNode = edgeArray[i+1];
-				//edge information format: newId of startNode, newId of endNode, cost
-				result = result + Integer.toString(newIdOf.get(startNode)) + " " + Integer.toString(newIdOf.get(endNode)) + " " + Integer.toString(edgeArray[i+2]) + "\n";
+				//edge information format: newId of startNode, newId of endNode, cost. separate with one space
+				subgraphString = subgraphString + Integer.toString(newIdOf.get(startNode)) + " " + Integer.toString(newIdOf.get(endNode)) + " " + Integer.toString(edgeArray[i+2]) + "\n";
 			}
 		}
 
 		//add number of nodes and number of edges at begin of the string.
-		result = "#This is the subgraph. \n" + Integer.toString(newNodeId) + "\n" + Integer.toString(edgeCounter) + "\n" + result;
-		return result;
+		subgraphString = "#This is the subgraph. \n" + Integer.toString(newNodeId) + "\n" + Integer.toString(edgeCounter) + "\n" + subgraphString;
+		return subgraphString;
 	}
 	
 }
