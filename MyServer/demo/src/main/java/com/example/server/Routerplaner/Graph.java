@@ -210,11 +210,14 @@ public class Graph {
 	 */
 	public String calculateSubgraph(final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
 		String subgraphString = "\n";//the subgraph String starts with a blank line, for consistency reason.
-
+		System.out.print("calculating subgraph:");
 		// check all nodes whether they are part of the subgraph:
 		int newNodeId = 0;//new nodeId of subgraph
 		HashMap<Integer,Integer> newIdOf = new HashMap<Integer,Integer>();//mapping: oldNodeId -> newNodeId
 		for(int i = 0; i<nodeNr;i++){
+			if (i % 1000000 == 0){
+				System.out.print("#");//loading bar for nodes.
+			}
 			if(nodeInSubgraph(i, minLatitude, maxLatitude, minLongitude, maxLongitude)){
 				//node information format: oldId, newId, latitude, longitude. separate with one space
 				subgraphString = subgraphString + Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + "\n";
@@ -228,6 +231,9 @@ public class Graph {
 		//check all edges, whether they are part of the subgraph:(an edge is in the subgraph iff both of its ends are in the subgraph)
 		int edgeCounter = 0;
 		for (int i = 0; i < edgeArray.length; i+=lengthOfEdgeElement) {
+			if (i % 1000000 == 0){
+				System.out.print("$");//loading bar for edges.
+			}
 			if(nodeInSubgraph(edgeArray[i], minLatitude, maxLatitude, minLongitude, maxLongitude) && nodeInSubgraph(edgeArray[i+1], minLatitude, maxLatitude, minLongitude, maxLongitude)){
 				//count the current edge as edges in subgraph
 				edgeCounter++;

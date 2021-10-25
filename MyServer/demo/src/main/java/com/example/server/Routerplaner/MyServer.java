@@ -20,44 +20,49 @@ public class MyServer {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            int scr = -1;
-            int tar = -1;
-            String path = null;
+            double minLat = -1;
+            double maxLat = -1;
+            double minLong = -1;
+            double maxLong = -1;
+            String subgraph = null;
             if("GET".equals(exchange.getRequestMethod())){
-                ArrayList<Integer> sourceAndTarget = new ArrayList<>();
-                sourceAndTarget = handleGetRequest(exchange);
-                scr = sourceAndTarget.get(0);
-                tar = sourceAndTarget.get(1);
-                System.out.println("scr="+scr);
-                System.out.println("tar="+tar);
+                ArrayList<Double> minLatMaxLatMinLongMaxLong = new ArrayList<>();
+                minLatMaxLatMinLongMaxLong = handleGetRequest(exchange);
+                minLat = minLatMaxLatMinLongMaxLong.get(0);
+                maxLat = minLatMaxLatMinLongMaxLong.get(1);
+                minLong = minLatMaxLatMinLongMaxLong.get(2);
+                maxLong = minLatMaxLatMinLongMaxLong.get(3);
+                System.out.println("minLat = "+minLat);
+                System.out.println("maxLat = "+maxLat);
+                System.out.println("minLong = "+minLong);
+                System.out.println("maxLong = "+maxLong);
                 Graph g = new Graph("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Graphfiles/germany.txt");
-                Dijkstra dij = new Dijkstra(g, scr, tar);
-                path = dij.getShortestPathInLonLat();
+                subgraph = g.calculateSubgraph(minLat, maxLat, minLong, maxLong);
                 System.out.println("computing path finished.");
             }
-            handleResponse(exchange, path);
+            handleResponse(exchange, subgraph);
         }
         /**
          * 
          * @param exchange
          * @return
          */
-        private ArrayList<Integer> handleGetRequest(HttpExchange exchange) {
-            ArrayList<Integer> sourceAndTarget = new ArrayList<>();
-            Pattern p = Pattern.compile("[0-9]+");
+        private ArrayList<Double> handleGetRequest(HttpExchange exchange) {
+            ArrayList<Double> argsForSubGraph = new ArrayList<>();
+            Pattern p = Pattern.compile("(-)?[0-9]+.[0-9]+");
             Matcher m = p.matcher(exchange.getRequestURI().toString());
             while (m.find()) {
-                int n = Integer.parseInt(m.group());
-                sourceAndTarget.add(n);
+                double n = Double.parseDouble(m.group());
+                argsForSubGraph.add(n);
             }
-             return sourceAndTarget;
+             return argsForSubGraph;
         }
         
         
-        private void handleResponse(HttpExchange httpExchange, String path)  throws  IOException{
+        private void handleResponse(HttpExchange httpExchange, String subgraph)  throws  IOException{
             OutputStream outputStream = httpExchange.getResponseBody();
             StringBuilder htmlBuilder = new StringBuilder();
-            htmlBuilder.append("<html>").append("<body>").append("<h1>").append(path).append("</h1>").append("</body>").append("</html>");
+            htmlBuilder.append("<html>").append("<body>").append("<h1>").append(subgraph).append("</h1>").append("</body>").append("</html>");
             String htmlResponse = StringEscapeUtils.escapeHtml4(htmlBuilder.toString());
             httpExchange.sendResponseHeaders(200, htmlResponse.length());
             outputStream.write(htmlResponse.getBytes());
@@ -71,7 +76,7 @@ public class MyServer {
     
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("localhost",8081),0);
-        server.createContext("/query", new MyHttpHandler());
+        server.createContext("/subgraph", new MyHttpHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
         System.out.println("server started.");
