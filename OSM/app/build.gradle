@@ -33,6 +33,7 @@ android {
     }
 
     useLibrary 'org.apache.http.legacy'
+    compileSdkVersion 31
 }
 
 dependencies {
@@ -51,6 +52,8 @@ dependencies {
     implementation 'org.osmdroid:osmdroid-mapsforge:6.1.11'
     implementation 'org.osmdroid:osmdroid-geopackage:6.1.11'
     implementation 'org.osmdroid:osmdroid-android:6.1.11'
+
+
 
 
 
