@@ -245,7 +245,7 @@ public class Graph {
 		}
 
 		//add number of nodes and number of edges at begin of the string.
-		subgraphString = "#This is the subgraph. \n" + Integer.toString(newNodeId) + "\n" + Integer.toString(edgeCounter) + "\n" + subgraphString;
+		subgraphString = "#\n#This is the subgraph. \n" + Integer.toString(newNodeId) + "\n" + Integer.toString(edgeCounter) + "\n" + subgraphString;
 		return subgraphString;
 	}
 	

@@ -1,19 +1,24 @@
 package com.example.osm
 
 
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.preference.PreferenceManager
+import android.util.Log
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import com.android.volley.Request
+import com.android.volley.RequestQueue
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import java.util.*
+
+
+
 
 class MainActivity : AppCompatActivity() {
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 1;
@@ -55,12 +60,19 @@ class MainActivity : AppCompatActivity() {
         mapController.setZoom(19.0)
         val csBuilding = GeoPoint(48.74518,9.10665)
         mapController.setCenter(csBuilding)
-        val firstMarker = Marker(map)
-        firstMarker.position = csBuilding
-        firstMarker.title = "Test Marker"
-        firstMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-        map.overlays.add(firstMarker)
+        val markerOnCsBuilding = Marker(map)
+        markerOnCsBuilding.position = csBuilding
+        markerOnCsBuilding.title = "This is Computer Science building of university Stuttgart."
+        markerOnCsBuilding.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        map.overlays.add(markerOnCsBuilding)
         map.invalidate()
+
+        //sendSubgrapgGetRequest(48.745,48.778, 9.106, 9.182)
+
+        val sendRequestButton: Button = findViewById(R.id.button0)
+        sendRequestButton.setOnClickListener {
+            sendSubgraphGetRequest(48.745,48.778, 9.106, 9.182)
+        }
     }
 
 
@@ -84,39 +96,60 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        val permissionsToRequest = ArrayList<String>()
-        var i = 0
-        while (i < grantResults.size) {
-            permissionsToRequest.add(permissions[i])
-            i++
-        }
-        if (permissionsToRequest.size > 0) {
-            ActivityCompat.requestPermissions(
-                this,
-                permissionsToRequest.toTypedArray(),
-                REQUEST_PERMISSIONS_REQUEST_CODE)
-        }
+//    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        val permissionsToRequest = ArrayList<String>()
+//        var i = 0
+//        while (i < grantResults.size) {
+//            permissionsToRequest.add(permissions[i])
+//            i++
+//        }
+//        if (permissionsToRequest.size > 0) {
+//            ActivityCompat.requestPermissions(
+//                this,
+//                permissionsToRequest.toTypedArray(),
+//                REQUEST_PERMISSIONS_REQUEST_CODE)
+//        }
+//    }
+
+//    private fun requestPermissionsIfNecessary(permissions: Array<String>) {
+//        val permissionsToRequest:ArrayList<String> = ArrayList()
+//        for (permission in permissions) {
+//            if (ContextCompat.checkSelfPermission(this, permission)
+//                != PackageManager.PERMISSION_GRANTED) {
+//                // Permission is not granted
+//                permissionsToRequest.add(permission);
+//            }
+//        }
+//        if (permissionsToRequest.size > 0) {
+//            ActivityCompat.requestPermissions(
+//                this,
+//                permissionsToRequest.toTypedArray(),
+//                REQUEST_PERMISSIONS_REQUEST_CODE);
+//        }
+//    }
+
+    /**
+     *
+     */
+    private fun sendSubgraphGetRequest(minLat:Double, maxLat:Double, minLong:Double, maxLong:Double) {
+        //initialize request queue
+        val queue: RequestQueue = Volley.newRequestQueue(this)
+        val url = String.format("http://192.168.0.10:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong", minLat, maxLat,minLong,maxLong)
+        val stringRequest = StringRequest(
+            Request.Method.GET, url,
+            { response ->
+                println("responds received.")
+                // Display the response string.
+                println(response)
+            },
+            {
+                println(it.message)
+                println("doesn't work!")
+                println(url)})
+        stringRequest.tag = "requestSubgraph"
+        queue.add(stringRequest)
+        Log.d("request","request sent")
     }
-
-    private fun requestPermissionsIfNecessary(permissions: Array<String>) {
-        val permissionsToRequest:ArrayList<String> = ArrayList()
-        for (permission in permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission)
-                != PackageManager.PERMISSION_GRANTED) {
-                // Permission is not granted
-                permissionsToRequest.add(permission);
-            }
-        }
-        if (permissionsToRequest.size > 0) {
-            ActivityCompat.requestPermissions(
-                this,
-                permissionsToRequest.toTypedArray(),
-                REQUEST_PERMISSIONS_REQUEST_CODE);
-        }
-    }
-
-
 
 }
