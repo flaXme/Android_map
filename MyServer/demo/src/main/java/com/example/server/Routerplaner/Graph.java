@@ -169,7 +169,6 @@ public class Graph {
 	 * @return ture if the node is in the area, else false.
 	 */
 	public boolean nodeInSubgraph(final int nodeId,final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
-		//To be rebiuld.
 		boolean inLongitudeInterval = false;//whether the chosen node is in subgraph w.r.t. longitude
 		boolean inLatitudeInterval = false;//whether the chosen node is in subgraph w.r.t. latitude
 		//w.r.t. longitude:

@@ -53,6 +53,7 @@ dependencies {
     implementation 'org.osmdroid:osmdroid-geopackage:6.1.11'
     implementation 'org.osmdroid:osmdroid-android:6.1.11'
 
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
 
 
 
