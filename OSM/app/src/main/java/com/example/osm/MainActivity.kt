@@ -3,6 +3,7 @@ package com.example.osm
 
 import android.app.DownloadManager
 import android.content.pm.PackageManager
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -60,6 +61,8 @@ class MainActivity : AppCompatActivity() {
                             or TileSourcePolicy.FLAG_USER_AGENT_NORMALIZED
                 )
             ))
+        map.setBuiltInZoomControls(true)
+        map.setMultiTouchControls(true)
 
         /**
          * add marker onclick, click on existing marker will remove the marker
@@ -262,6 +265,8 @@ class MainActivity : AppCompatActivity() {
         }
         if (pointList.size > 2) {
             path.setPoints(pointList)
+            path.outlinePaint.strokeJoin = Paint.Join.ROUND
+            path.outlinePaint.strokeCap = Paint.Cap.ROUND
             map.overlays.add(path)
             map.controller.setCenter(path.actualPoints.get(0))
             map.invalidate()
