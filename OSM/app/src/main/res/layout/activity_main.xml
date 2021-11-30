@@ -10,23 +10,16 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/button0"
+            android:id="@+id/download"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="download map" />
 
-        <ProgressBar
-            android:id="@+id/downloadProgressBar"
+        <Button
+            android:id="@+id/computePath"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="invisible" />
-
-        <TextView
-            android:id="@+id/downloadStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:text="" />
-
+            android:text="compute Path" />
 
 
     </LinearLayout>
