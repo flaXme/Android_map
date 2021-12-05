@@ -2,8 +2,10 @@ package com.example.osm
 
 
 import android.app.DownloadManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Paint
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -17,6 +19,7 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
 import org.osmdroid.tileprovider.tilesource.XYTileSource
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
@@ -27,6 +30,9 @@ import kotlin.math.asinh
 import kotlin.math.floor
 import kotlin.math.tan
 
+
+
+
 class MainActivity : AppCompatActivity() {
     private lateinit var map : MapView;
     @Volatile
@@ -34,24 +40,42 @@ class MainActivity : AppCompatActivity() {
     var rectangle: MutableList<GeoPoint> = ArrayList()
     var startAndEnd: MutableList<GeoPoint> = ArrayList()
     lateinit var  subGraph: Graph
+    lateinit var downloadArea: BoundingBox
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
-        //data structure, which contains all nodes and edges information of a subgraph
-
-
-
-
         Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
 
 
         //inflate and create the map
         setContentView(R.layout.activity_main);
         map = findViewById(R.id.map)
+//        map.setTileSource(
+//            XYTileSource(
+//                "worldMap",
+//                3, 20, 256, ".png", arrayOf(
+//                    "https://tiles.fmi.uni-stuttgart.de/"
+//                ), "© OpenStreetMap contributors",
+//                TileSourcePolicy(
+//                    2,
+//                    TileSourcePolicy.FLAG_NO_BULK
+//                            or TileSourcePolicy.FLAG_NO_PREVENTIVE
+//                            or TileSourcePolicy.FLAG_USER_AGENT_MEANINGFUL
+//                            or TileSourcePolicy.FLAG_USER_AGENT_NORMALIZED
+//                )
+//            ))
+//        map.minZoomLevel= 3.0
+        //local map tiles:
+        if(ContextCompat.checkSelfPermission(this,"android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED){
+            //if permission is not granted
+            ActivityCompat.requestPermissions(this, arrayOf("android.permission.READ_EXTERNAL_STORAGE"),200);
+        }
+        val tileLocation =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/osm/tiles")
         map.setTileSource(
             XYTileSource(
-                "worldMap",
-                0, 20, 256, ".png", arrayOf(
-                    "https://tiles.fmi.uni-stuttgart.de/"
+                "localMap",
+                3, 20, 256, ".png", arrayOf(
+                    tileLocation.absolutePath+"/"
                 ), "© OpenStreetMap contributors",
                 TileSourcePolicy(
                     2,
@@ -61,8 +85,12 @@ class MainActivity : AppCompatActivity() {
                             or TileSourcePolicy.FLAG_USER_AGENT_NORMALIZED
                 )
             ))
+        map.minZoomLevel= 3.0
+        //enable pinch zoom in.
         map.setBuiltInZoomControls(true)
         map.setMultiTouchControls(true)
+
+
 
         /**
          * add marker onclick, click on existing marker will remove the marker
@@ -113,14 +141,13 @@ class MainActivity : AppCompatActivity() {
         val startPoint = csBuilding
         mapController.setCenter(startPoint)
 
-        //test Markers:
-//        val markerOnCsBuilding = Marker(map)
-//        markerOnCsBuilding.position = csBuilding
-//        markerOnCsBuilding.title = "This is Computer Science building of university Stuttgart."
-//        markerOnCsBuilding.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-//        map.overlays.add(markerOnCsBuilding)
-
-
+        downloadArea = BoundingBox(48.76,9.108,48.724,9.1046)
+        
+        var centerOfArea = downloadArea.centerWithDateLine
+        var markOfCenter = Marker(map)
+        markOfCenter.position=centerOfArea
+        map.overlays.add(markOfCenter)
+        map.invalidate()
 
 
 
@@ -168,46 +195,59 @@ class MainActivity : AppCompatActivity() {
         }
         sendDownloadRequestButton.setOnClickListener {
             if(rectangle.size == 4) {
-                Toast.makeText(this, "Start downloading graph data", Toast.LENGTH_LONG).show()
-                var minLat = Double.MAX_VALUE
-                var maxLat = Double.MIN_VALUE
-                var minLong = Double.MAX_VALUE
-                var maxLong = Double.MIN_VALUE
+                //check internet connection
+                if(isNetworkConnected()) {
+                    Toast.makeText(this, "Start downloading graph data", Toast.LENGTH_LONG).show()
+                    var minLat = Double.MAX_VALUE
+                    var maxLat = Double.MIN_VALUE
+                    var minLong = Double.MAX_VALUE
+                    var maxLong = Double.MIN_VALUE
 
-                for (p in rectangle) {
-                    if (p.latitude < minLat) {
-                        minLat = p.latitude
+                    for (p in rectangle) {
+                        if (p.latitude < minLat) {
+                            minLat = p.latitude
+                        }
+                        if (p.latitude > maxLat) {
+                            maxLat = p.latitude
+                        }
+                        if (p.longitude < minLong) {
+                            minLong = p.longitude
+                        }
+                        if (p.longitude > maxLong) {
+                            maxLong = p.longitude
+                        }
                     }
-                    if (p.latitude > maxLat) {
-                        maxLat = p.latitude
-                    }
-                    if (p.longitude < minLong) {
-                        minLong = p.longitude
-                    }
-                    if (p.longitude > maxLong) {
-                        maxLong = p.longitude
-                    }
-                }
-                var bottomLeft = GeoPoint(minLat, minLong)
-                var bottomRight = GeoPoint(minLat, maxLong)
-                var topRight = GeoPoint(maxLat, maxLong)
-                var topLeft = GeoPoint(maxLat, minLong)
+                    var bottomLeft = GeoPoint(minLat, minLong)
+                    var bottomRight = GeoPoint(minLat, maxLong)
+                    var topRight = GeoPoint(maxLat, maxLong)
+                    var topLeft = GeoPoint(maxLat, minLong)
 
-                val area = Polyline(map)
-                area.addPoint(bottomLeft)
-                area.addPoint(bottomRight)
-                area.addPoint(topRight)
-                area.addPoint(topLeft)
-                area.addPoint(bottomLeft)
-                map.overlays.add(area)
-                map.invalidate()
+                    val area = Polyline(map)
+                    area.addPoint(bottomLeft)
+                    area.addPoint(bottomRight)
+                    area.addPoint(topRight)
+                    area.addPoint(topLeft)
+                    area.addPoint(bottomLeft)
+                    map.overlays.add(area)
+                    map.invalidate()
 
-                //check run time premission
-                if(ContextCompat.checkSelfPermission(this,"android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED){
-                    //if permission is not granted
-                    ActivityCompat.requestPermissions(this, arrayOf("android.permission.WRITE_EXTERNAL_STORAGE"),100);
-                }else{//permission already granted
-                    download(minLat, maxLat, minLong, maxLong)
+                    //check run time premission
+                    if (ContextCompat.checkSelfPermission(
+                            this,
+                            "android.permission.WRITE_EXTERNAL_STORAGE"
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        //if permission is not granted
+                        ActivityCompat.requestPermissions(
+                            this,
+                            arrayOf("android.permission.WRITE_EXTERNAL_STORAGE"),
+                            100
+                        );
+                    } else {//permission already granted
+                        download(minLat, maxLat, minLong, maxLong)
+                    }
+                }else{
+                    Toast.makeText(this,"No Internet connection!", Toast.LENGTH_SHORT).show()
                 }
 
             }else{
@@ -226,16 +266,38 @@ class MainActivity : AppCompatActivity() {
     private fun download(minLat:Double, maxLat:Double, minLong:Double, maxLong:Double){
         //download graph data:
         //user defined server ip
-        val url = "http://192.168.0.10:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
-        val request = DownloadManager.Request(Uri.parse(url))
+        val dataUrl = "http://192.168.0.10:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
+        val dataRequest = DownloadManager.Request(Uri.parse(dataUrl))
             .setTitle("graphDataDownloadRequest")
-            .setDescription("Downloading..")
+            .setDescription("Downloading graph data")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setAllowedOverMetered(true)
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"osm/data/graphData.txt" )
         val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-        dm.enqueue(request)
+        dm.enqueue(dataRequest)
+
         //download tile data:
+        for (zoomLevel in 19..19){
+            val minTileCoor = getXYTile(minLat,minLong,zoomLevel)
+            val minX = minTileCoor.first
+            val maxY = minTileCoor.second
+            val maxTileCoor = getXYTile(maxLat,maxLong,zoomLevel)
+            val maxX = maxTileCoor.first
+            val minY = maxTileCoor.second
+            for (x in minX..maxX){
+                for (y in minY..maxY){
+                    val url = "https://tiles.fmi.uni-stuttgart.de/$zoomLevel/$x/$y.png"
+                    val tileRequest = DownloadManager.Request(Uri.parse(url))
+                        .setTitle("graphTileDownloadRequest")
+                        .setDescription("Downloading graph tiles.")
+                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        .setAllowedOverMetered(true)
+                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"osm/tiles/$zoomLevel/$x/$y.png" )
+                    dm.enqueue(tileRequest)
+                }
+            }
+
+        }
 
     }
     private fun computePath(start: Int, end:Int){
@@ -265,6 +327,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (pointList.size > 2) {
             path.setPoints(pointList)
+            //polyline refinement, no gaps between two subline.
             path.outlinePaint.strokeJoin = Paint.Join.ROUND
             path.outlinePaint.strokeCap = Paint.Cap.ROUND
             map.overlays.add(path)
@@ -299,7 +362,10 @@ class MainActivity : AppCompatActivity() {
         return Pair(xtile, ytile)
     }
 
-
+    fun isNetworkConnected(): Boolean {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return cm.activeNetworkInfo != null && cm.activeNetworkInfo!!.isConnected
+    }
 
     override fun onResume() {
         super.onResume();

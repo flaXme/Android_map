@@ -51,7 +51,8 @@ public class MyServer {
          */
         private ArrayList<Double> handleDownloadGraphGetRequest(HttpExchange exchange) {
             ArrayList<Double> argsForSubGraph = new ArrayList<>();
-            Pattern p = Pattern.compile("(-)?[0-9]+.[0-9]+");
+            //The url looks like: http://serverIP/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong
+            Pattern p = Pattern.compile("(-)?[0-9]+.[0-9]+");//matches number like -49.23, 9.02
             Matcher m = p.matcher(exchange.getRequestURI().toString());
             while (m.find()) {
                 double n = Double.parseDouble(m.group());
@@ -78,7 +79,7 @@ public class MyServer {
 
     
     public static void main(String[] args) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress("192.168.0.10",8081),0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(8081),0);
         server.createContext("/subgraph", new MyHttpHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
