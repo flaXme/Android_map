@@ -19,7 +19,7 @@ public class MyServer {
     private static class MyHttpHandler implements HttpHandler{
         public Graph g;
         public MyHttpHandler(){
-            g = new Graph("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Graphfiles/germany.txt");
+            g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/Graphfiles/germany.txt");
         }
         @Override
         public void handle(HttpExchange exchange) throws IOException {
