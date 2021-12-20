@@ -6,9 +6,11 @@ import android.content.pm.PackageManager
 import android.graphics.Paint
 import android.net.ConnectivityManager
 import android.net.Uri
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
+import android.text.format.Formatter.formatIpAddress
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,7 @@ import androidx.core.content.PermissionChecker.checkSelfPermission
 import androidx.fragment.app.Fragment
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.tileprovider.cachemanager.CacheManager
 import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.BoundingBox
@@ -29,10 +32,13 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.PI
 import kotlin.math.asinh
 import kotlin.math.floor
 import kotlin.math.tan
+
 
 /**
  * A simple [Fragment] subclass.
@@ -52,6 +58,13 @@ class OnlineFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        /**
+         * get ip address of the user
+         */
+        val context = requireContext().applicationContext
+        val wm = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        val ip: String = formatIpAddress(wm.connectionInfo.ipAddress)
+
         // Inflate the layout for this fragment
         val view:View = inflater.inflate(R.layout.fragment_online, container, false)
         Configuration.getInstance().load(activity, PreferenceManager.getDefaultSharedPreferences(activity));
@@ -68,13 +81,14 @@ class OnlineFragment : Fragment() {
                 ), "© OpenStreetMap contributors",
                 TileSourcePolicy(
                     2,
-                    TileSourcePolicy.FLAG_NO_BULK
-                            or TileSourcePolicy.FLAG_NO_PREVENTIVE
+                    //TileSourcePolicy.FLAG_NO_BULK
+                            TileSourcePolicy.FLAG_NO_PREVENTIVE
                             or TileSourcePolicy.FLAG_USER_AGENT_MEANINGFUL
                             or TileSourcePolicy.FLAG_USER_AGENT_NORMALIZED
                 )
             )
         )
+
         map.minZoomLevel= 3.0
 
 
@@ -135,13 +149,6 @@ class OnlineFragment : Fragment() {
         mapController.setCenter(startPoint)
 
 
-        downloadArea = BoundingBox(48.76,9.108,48.724,9.1046)
-
-        var centerOfArea = downloadArea.centerWithDateLine
-        var markOfCenter = Marker(map)
-        markOfCenter.position=centerOfArea
-        map.overlays.add(markOfCenter)
-        map.invalidate()
 
 
 
@@ -215,7 +222,7 @@ class OnlineFragment : Fragment() {
                     var bottomRight = GeoPoint(minLat, maxLong)
                     var topRight = GeoPoint(maxLat, maxLong)
                     var topLeft = GeoPoint(maxLat, minLong)
-
+                    downloadArea = BoundingBox(maxLat,maxLong,minLat,minLong)
                     val area = Polyline(map)
                     area.addPoint(bottomLeft)
                     area.addPoint(bottomRight)
@@ -278,30 +285,39 @@ class OnlineFragment : Fragment() {
         val dm = activity?.getSystemService(AppCompatActivity.DOWNLOAD_SERVICE) as DownloadManager
         dm.enqueue(dataRequest)
 
-        //download tile data:
-        for (zoomLevel in 19..19){
-            val minTileCoor = getXYTile(minLat,minLong,zoomLevel)
-            val minX = minTileCoor.first
-            val maxY = minTileCoor.second
-            val maxTileCoor = getXYTile(maxLat,maxLong,zoomLevel)
-            val maxX = maxTileCoor.first
-            val minY = maxTileCoor.second
-            for (x in minX..maxX){
-                for (y in minY..maxY){
-                    val url = "https://tiles.fmi.uni-stuttgart.de/$zoomLevel/$x/$y.png"
-                    val tileRequest = DownloadManager.Request(Uri.parse(url))
-                        .setTitle("graphTileDownloadRequest")
-                        .setDescription("Downloading graph tiles.")
-                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                        .setAllowedOverMetered(true)
-                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"osm/tiles/$zoomLevel/$x/$y.png" )
-                    dm.enqueue(tileRequest)
-                }
-            }
+        //download tile data with DownloadManager:
+//        for (zoomLevel in 3..18){
+//            val minTileCoor = getXYTile(minLat,minLong,zoomLevel)
+//            val minX = minTileCoor.first
+//            val maxY = minTileCoor.second
+//            val maxTileCoor = getXYTile(maxLat,maxLong,zoomLevel)
+//            val maxX = maxTileCoor.first
+//            val minY = maxTileCoor.second
+//            for (x in minX..maxX){
+//                for (y in minY..maxY){
+//                    val url = "https://tiles.fmi.uni-stuttgart.de/$zoomLevel/$x/$y.png"
+//                    val tileRequest = DownloadManager.Request(Uri.parse(url))
+//                        .setTitle("graphTileDownloadRequest")
+//                        .setDescription("Downloading graph tiles.")
+//                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+//                        .setAllowedOverMetered(true)
+//                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"osm/tiles/$zoomLevel/$x/$y.png" )
+//                    dm.enqueue(tileRequest)
+//                }
+//            }
+//
+//        }
 
-        }
+        //download tiles with cacheManager
+        //setHasOptionsMenu(false)
+        val cm = CacheManager(map)
+        cm.downloadAreaAsync(activity,downloadArea,3,19)
+
+
 
     }
+
+
     private fun computePath(start: Int, end:Int){
         var dij = Dijkstra(subGraph,start,end)
         drawLineWithStringOfCoordinates(dij.shortestPathInLonLat)
