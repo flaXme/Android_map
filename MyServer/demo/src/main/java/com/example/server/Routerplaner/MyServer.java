@@ -80,10 +80,11 @@ public class MyServer {
     
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8081),0);
+        String hostName = server.getAddress().getHostName();
         server.createContext("/subgraph", new MyHttpHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
-        System.out.println("server started.");
+        System.out.println("server started. host name is "+ hostName);
     }
     
     

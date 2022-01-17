@@ -49,7 +49,6 @@ class OfflineFragment : Fragment() {
         Configuration.getInstance().load(activity, PreferenceManager.getDefaultSharedPreferences(activity));
 
 
-
         //inflate and create the map
         map = view.findViewById(R.id.map)
         map.setTileSource(
@@ -116,14 +115,6 @@ class OfflineFragment : Fragment() {
         mapController.setCenter(startPoint)
 
 
-        downloadArea = BoundingBox(48.76,9.108,48.724,9.1046)
-
-        var centerOfArea = downloadArea.centerWithDateLine
-        var markOfCenter = Marker(map)
-        markOfCenter.position=centerOfArea
-        map.overlays.add(markOfCenter)
-        map.invalidate()
-
 
 
 
@@ -141,8 +132,8 @@ class OfflineFragment : Fragment() {
                 requestPermissions(arrayOf("android.permission.READ_EXTERNAL_STORAGE"),200);
             }else{//permission already granted
                 if (startAndEnd.size == 2) {
-                    var start = startAndEnd.get(0)
-                    var end = startAndEnd.get(1)
+                    var start = startAndEnd[0]
+                    var end = startAndEnd[1]
                     //check whether start and end point are in the area.
                     var graphData =
                         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/osm/data/graphData.txt")
@@ -168,12 +159,16 @@ class OfflineFragment : Fragment() {
                 }else{
                     Toast.makeText(activity,"Need exactly two markers for start and end!", Toast.LENGTH_SHORT).show()
                 }
+
             }
 
         }
         return view
     }
-
+    /**
+     * @param start: id of the start point in the subgraph
+     * @param end: id of tne end point in the subgraph
+     */
     private fun computePath(start: Int, end:Int){
         var dij = Dijkstra(subGraph,start,end)
         drawLineWithStringOfCoordinates(dij.shortestPathInLonLat)
@@ -209,7 +204,9 @@ class OfflineFragment : Fragment() {
         }else{
             Toast.makeText(activity, "No path Available!", Toast.LENGTH_SHORT).show()
         }
-
+        path.setOnClickListener(Polyline.OnClickListener{ path, map, _ ->
+            map.overlays.remove(path)
+        })
     }
 
 

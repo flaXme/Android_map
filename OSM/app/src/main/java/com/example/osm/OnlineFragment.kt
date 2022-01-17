@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
 import android.text.format.Formatter.formatIpAddress
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,16 +29,14 @@ import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.PI
-import kotlin.math.asinh
-import kotlin.math.floor
-import kotlin.math.tan
+import kotlin.math.*
 
 
 /**
@@ -48,10 +47,11 @@ import kotlin.math.tan
 class OnlineFragment : Fragment() {
     private lateinit var map : MapView;
     @Volatile
-    var rectangle: MutableList<GeoPoint> = ArrayList()
+    var rectangle: MutableList<Marker> = ArrayList()
     var startAndEnd: MutableList<GeoPoint> = ArrayList()
     lateinit var  subGraph: Graph
     lateinit var downloadArea: BoundingBox
+    lateinit var ip: String
 
 
     override fun onCreateView(
@@ -63,15 +63,20 @@ class OnlineFragment : Fragment() {
          */
         val context = requireContext().applicationContext
         val wm = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        val ip: String = formatIpAddress(wm.connectionInfo.ipAddress)
+        ip  = formatIpAddress(wm.connectionInfo.ipAddress)
+        Log.d("ip-address",ip)
 
-        // Inflate the layout for this fragment
+
+        /**
+         * Inflate the layout for this fragment
+         */
         val view:View = inflater.inflate(R.layout.fragment_online, container, false)
         Configuration.getInstance().load(activity, PreferenceManager.getDefaultSharedPreferences(activity));
 
 
-
-        //inflate and create the map
+        /**
+         * inflate and create the map
+         */
         map = view.findViewById(R.id.map)
         map.setTileSource(
             XYTileSource(
@@ -92,10 +97,12 @@ class OnlineFragment : Fragment() {
         map.minZoomLevel= 3.0
 
 
-        //enable pinch zoom in.
-        map.setBuiltInZoomControls(true)
+        /**
+         * enable pinch zoom in.
+         */
+        //map.setBuiltInZoomControls(true)
+        map.zoomController.setVisibility(CustomZoomButtonsController.Visibility.ALWAYS)
         map.setMultiTouchControls(true)
-
 
 
 
@@ -105,18 +112,18 @@ class OnlineFragment : Fragment() {
         val mReceive = object : MapEventsReceiver {
             //single click to select subgraph area, i.e. rectangle
             override fun singleTapConfirmedHelper(p: GeoPoint):Boolean{
-                Toast.makeText(activity,"Border point selected.", Toast.LENGTH_SHORT).show()
-                val marker = Marker(map)
-                //click on existing marker to delete it.
-                marker.setOnMarkerClickListener { marker, map ->
-                    Toast.makeText(activity, "Border point deleted.", Toast.LENGTH_SHORT).show()
-                    rectangle.remove(marker.position)
-                    map.overlays.remove(marker)
-                }
-                marker.position=p
-                map.overlays.add(marker)
-                rectangle.add(p)
-
+//                Toast.makeText(activity,"Border point selected.", Toast.LENGTH_SHORT).show()
+//                val marker = Marker(map)
+//                //click on existing marker to delete it.
+//                marker.setOnMarkerClickListener { marker, map ->
+//                    Toast.makeText(activity, "Border point deleted.", Toast.LENGTH_SHORT).show()
+//                    rectangle.remove(marker.position)
+//                    map.overlays.remove(marker)
+//                }
+//                marker.position=p
+//                map.overlays.add(marker)
+//                rectangle.add(p)
+//                map.invalidate()
                 return false
             }
             //long click to select start and end point.
@@ -132,29 +139,175 @@ class OnlineFragment : Fragment() {
                 marker.position=p
                 map.overlays.add(marker)
                 startAndEnd.add(p)
-
+                map.invalidate()
                 return false
             }
         }
         map.overlays.add(MapEventsOverlay(mReceive))
 
 
-
-
-
+        /**
+         * set the initial map location to computer science building of university of stuttgart.
+         */
         val mapController = map.controller
         mapController.setZoom(19.0)
         val csBuilding = GeoPoint(48.74518,9.10665)
         val startPoint = csBuilding
         mapController.setCenter(startPoint)
 
+        /**
+         * draggable marker
+         */
+        var bottomLeft = Marker(map)
+        bottomLeft.isDraggable = true
+        bottomLeft.position = GeoPoint(startPoint.latitude - 0.0005, startPoint.longitude - 0.0005)
+        map.overlays.add(bottomLeft)
+        var bottomRight = Marker(map)
+        bottomRight.isDraggable = true
+        bottomRight.position = GeoPoint(startPoint.latitude - 0.0005,startPoint.longitude + 0.0005 )
+        map.overlays.add(bottomRight)
+        var topLeft = Marker(map)
+        topLeft.isDraggable = true
+        topLeft.position = GeoPoint(startPoint.latitude + 0.0005, startPoint.longitude - 0.0005)
+        map.overlays.add(topLeft)
+        var topRight = Marker(map)
+        topRight.isDraggable = true
+        topRight.position = GeoPoint(startPoint.latitude + 0.0005,startPoint.longitude+0.0005)
+        map.overlays.add(topRight)
+        rectangle.add(bottomLeft)
+        rectangle.add(bottomRight)
+        rectangle.add(topLeft)
+        rectangle.add(topRight)
+        topLeft.setVisible(false)
+        topRight.setVisible(false)
+        bottomLeft.setVisible(false)
+        bottomRight.setVisible(false)
+        topLeft.setAnchor(Marker.ANCHOR_CENTER,Marker.ANCHOR_CENTER)
+        topRight.setAnchor(Marker.ANCHOR_CENTER,Marker.ANCHOR_CENTER)
+        bottomLeft.setAnchor(Marker.ANCHOR_CENTER,Marker.ANCHOR_CENTER)
+        bottomRight.setAnchor(Marker.ANCHOR_CENTER,Marker.ANCHOR_CENTER)
+        /**
+         * borders
+         */
+        var upperBorder = Polyline()
+        var lowerBorder = Polyline()
+        var leftBorder = Polyline()
+        var rightBorder = Polyline()
+        /**
+         * drag event for top right marker
+         */
+        upperBorder.setPoints(listOf(GeoPoint(topLeft.position),GeoPoint(topRight.position)))
+        map.invalidate()
+        map.overlays.add(upperBorder)
+        var topRightDragEvent = object :Marker.OnMarkerDragListener{
+            override fun onMarkerDrag(marker: Marker?) {
+                if (marker != null) {
+                    topLeft.position = GeoPoint(marker.position.latitude,topLeft.position.longitude)
+                    bottomRight.position = GeoPoint(bottomRight.position.latitude,marker.position.longitude)
+                    upperBorder.setPoints(listOf(GeoPoint(topLeft.position),GeoPoint(topRight.position)))
+                    lowerBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(bottomRight.position)))
+                    leftBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(topLeft.position)))
+                    rightBorder.setPoints(listOf(GeoPoint(bottomRight.position),GeoPoint(topRight.position)))
+                }
+                map.invalidate()
+            }
+
+            override fun onMarkerDragEnd(marker: Marker?) {
+            }
+
+            override fun onMarkerDragStart(marker: Marker?) {
+            }
+        }
+        /**
+         * drag event for bottom left marker
+         */
+
+        lowerBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(bottomRight.position)))
+        map.invalidate()
+        map.overlays.add(lowerBorder)
+        var bottomLeftDragEvent = object :Marker.OnMarkerDragListener{
+            override fun onMarkerDrag(marker: Marker?) {
+                if (marker != null) {
+                    topLeft.position = GeoPoint(topLeft.position.latitude,marker.position.longitude)
+                    bottomRight.position = GeoPoint(marker.position.latitude,bottomRight.position.longitude)
+                    upperBorder.setPoints(listOf(GeoPoint(topLeft.position),GeoPoint(topRight.position)))
+                    lowerBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(bottomRight.position)))
+                    leftBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(topLeft.position)))
+                    rightBorder.setPoints(listOf(GeoPoint(bottomRight.position),GeoPoint(topRight.position)))
+                }
+                map.invalidate()
+            }
+
+            override fun onMarkerDragEnd(marker: Marker?) {
+            }
+
+            override fun onMarkerDragStart(marker: Marker?) {
+            }
+        }
+        /**
+         * drag event for top left marker
+         */
+
+        leftBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(topLeft.position)))
+        map.invalidate()
+        map.overlays.add(leftBorder)
+        var topLeftDragEvent = object :Marker.OnMarkerDragListener{
+            override fun onMarkerDrag(marker: Marker?) {
+                if (marker != null) {
+                    bottomLeft.position = GeoPoint(bottomLeft.position.latitude,marker.position.longitude)
+                    topRight.position = GeoPoint(marker.position.latitude,topRight.position.longitude)
+                    upperBorder.setPoints(listOf(GeoPoint(topLeft.position),GeoPoint(topRight.position)))
+                    lowerBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(bottomRight.position)))
+                    leftBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(topLeft.position)))
+                    rightBorder.setPoints(listOf(GeoPoint(bottomRight.position),GeoPoint(topRight.position)))
+                }
+                map.invalidate()
+            }
+
+            override fun onMarkerDragEnd(marker: Marker?) {
+            }
+
+            override fun onMarkerDragStart(marker: Marker?) {
+            }
+        }
+
+        /**
+         * drag event for bottom right marker
+         */
+
+        rightBorder.setPoints(listOf(GeoPoint(bottomRight.position),GeoPoint(topRight.position)))
+        map.invalidate()
+        map.overlays.add(rightBorder)
+        var bottomRightDragEvent = object :Marker.OnMarkerDragListener{
+            override fun onMarkerDrag(marker: Marker?) {
+                if (marker != null) {
+                    bottomLeft.position = GeoPoint(marker.position.latitude,bottomLeft.position.longitude)
+                    topRight.position = GeoPoint(topRight.position.latitude,marker.position.longitude)
+                    upperBorder.setPoints(listOf(GeoPoint(topLeft.position),GeoPoint(topRight.position)))
+                    lowerBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(bottomRight.position)))
+                    leftBorder.setPoints(listOf(GeoPoint(bottomLeft.position),GeoPoint(topLeft.position)))
+                    rightBorder.setPoints(listOf(GeoPoint(bottomRight.position),GeoPoint(topRight.position)))
+                }
+                map.invalidate()
+            }
+
+            override fun onMarkerDragEnd(marker: Marker?) {
+            }
+
+            override fun onMarkerDragStart(marker: Marker?) {
+            }
+        }
+
+        bottomRight.setOnMarkerDragListener(bottomRightDragEvent)
+        topLeft.setOnMarkerDragListener(topLeftDragEvent)
+        bottomLeft.setOnMarkerDragListener(bottomLeftDragEvent)
+        topRight.setOnMarkerDragListener(topRightDragEvent)
+        map.invalidate()
 
 
-
-
-
-
-        //download button:
+        /**
+         * compute path button:
+         */
         val sendDownloadRequestButton: Button = view.findViewById(R.id.download)
         val computePathButton: Button = view.findViewById(R.id.computePath)
         computePathButton.setOnClickListener{
@@ -164,8 +317,8 @@ class OnlineFragment : Fragment() {
                 requestPermissions(arrayOf("android.permission.READ_EXTERNAL_STORAGE"),200);
             }else{//permission already granted
                 if (startAndEnd.size == 2) {
-                    var start = startAndEnd.get(0)
-                    var end = startAndEnd.get(1)
+                    var start = startAndEnd[0]
+                    var end = startAndEnd[1]
                     //check whether start and end point are in the area.
                     var graphData =
                         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/osm/data/graphData.txt")
@@ -194,6 +347,9 @@ class OnlineFragment : Fragment() {
             }
 
         }
+        /**
+         * download button
+         */
         sendDownloadRequestButton.setOnClickListener {
             if(rectangle.size == 4) {
                 //check internet connection
@@ -204,18 +360,18 @@ class OnlineFragment : Fragment() {
                     var minLong = Double.MAX_VALUE
                     var maxLong = Double.MIN_VALUE
 
-                    for (p in rectangle) {
-                        if (p.latitude < minLat) {
-                            minLat = p.latitude
+                    for (marker in rectangle) {
+                        if (marker.position.latitude < minLat) {
+                            minLat = marker.position.latitude
                         }
-                        if (p.latitude > maxLat) {
-                            maxLat = p.latitude
+                        if (marker.position.latitude > maxLat) {
+                            maxLat = marker.position.latitude
                         }
-                        if (p.longitude < minLong) {
-                            minLong = p.longitude
+                        if (marker.position.longitude < minLong) {
+                            minLong = marker.position.longitude
                         }
-                        if (p.longitude > maxLong) {
-                            maxLong = p.longitude
+                        if (marker.position.longitude > maxLong) {
+                            maxLong = marker.position.longitude
                         }
                     }
                     var bottomLeft = GeoPoint(minLat, minLong)
@@ -261,21 +417,18 @@ class OnlineFragment : Fragment() {
         }
 
 
-
-
-
-
         return view
     }
 
 
     /**
-     * download graphdata in external files
+     * download graph data in external DOWNLOAD folder and tiles data in cache.
      */
     private fun download(minLat:Double, maxLat:Double, minLong:Double, maxLong:Double){
         //download graph data:
         //user defined server ip
         val dataUrl = "http://192.168.0.10:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
+        //val dataUrl = "http://$ip:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
         val dataRequest = DownloadManager.Request(Uri.parse(dataUrl))
             .setTitle("graphDataDownloadRequest")
             .setDescription("Downloading graph data")
@@ -312,12 +465,12 @@ class OnlineFragment : Fragment() {
         //setHasOptionsMenu(false)
         val cm = CacheManager(map)
         cm.downloadAreaAsync(activity,downloadArea,3,19)
-
-
-
     }
 
-
+    /**
+     * @param start: id of the start point in the subgraph
+     * @param end: id of tne end point in the subgraph
+     */
     private fun computePath(start: Int, end:Int){
         var dij = Dijkstra(subGraph,start,end)
         drawLineWithStringOfCoordinates(dij.shortestPathInLonLat)
@@ -354,11 +507,22 @@ class OnlineFragment : Fragment() {
         }else{
             Toast.makeText(activity, "No path Available!", Toast.LENGTH_SHORT).show()
         }
+        path.setOnClickListener(Polyline.OnClickListener{ path, map, _ ->
+            map.overlays.remove(path)
+        })
 
     }
 
 
-
+    /**
+     * Given a point in lat lang and zoom level, return the tile coordinate which contains the given point, w.r.t. the zoom level.
+     *
+     * @param lat: latitude of a specific point
+     * @param lon: longitude of a specific point
+     * @param zoom: zoom level of the tiles
+     *
+     * @return Pair<Int,Int>: tile coordinates x and y.
+     */
     fun getXYTile(lat : Double, lon: Double, zoom : Int) : Pair<Int, Int> {
         val latRad = Math.toRadians(lat)
         var xtile = floor( (lon + 180) / 360 * (1 shl zoom) ).toInt()
@@ -380,10 +544,14 @@ class OnlineFragment : Fragment() {
         return Pair(xtile, ytile)
     }
 
-    fun isNetworkConnected(): Boolean {
+    /**
+     * check whether is internet connection availiable.
+     */
+    private fun isNetworkConnected(): Boolean {
         val cm = activity?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         return cm.activeNetworkInfo != null && cm.activeNetworkInfo!!.isConnected
     }
+
 
 
 }
