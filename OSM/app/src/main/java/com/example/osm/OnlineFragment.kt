@@ -77,7 +77,7 @@ class OnlineFragment : Fragment() {
         /**
          * inflate and create the map
          */
-        map = view.findViewById(R.id.map)
+        map = view.findViewById(R.id.online_map)
         map.setTileSource(
             XYTileSource(
                 "worldMap",
@@ -112,18 +112,6 @@ class OnlineFragment : Fragment() {
         val mReceive = object : MapEventsReceiver {
             //single click to select subgraph area, i.e. rectangle
             override fun singleTapConfirmedHelper(p: GeoPoint):Boolean{
-//                Toast.makeText(activity,"Border point selected.", Toast.LENGTH_SHORT).show()
-//                val marker = Marker(map)
-//                //click on existing marker to delete it.
-//                marker.setOnMarkerClickListener { marker, map ->
-//                    Toast.makeText(activity, "Border point deleted.", Toast.LENGTH_SHORT).show()
-//                    rectangle.remove(marker.position)
-//                    map.overlays.remove(marker)
-//                }
-//                marker.position=p
-//                map.overlays.add(marker)
-//                rectangle.add(p)
-//                map.invalidate()
                 return false
             }
             //long click to select start and end point.
@@ -262,6 +250,7 @@ class OnlineFragment : Fragment() {
                     rightBorder.setPoints(listOf(GeoPoint(bottomRight.position),GeoPoint(topRight.position)))
                 }
                 map.invalidate()
+
             }
 
             override fun onMarkerDragEnd(marker: Marker?) {

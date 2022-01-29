@@ -50,7 +50,7 @@ class OfflineFragment : Fragment() {
 
 
         //inflate and create the map
-        map = view.findViewById(R.id.map)
+        map = view.findViewById(R.id.offline_map)
         map.setTileSource(
             XYTileSource(
                 "worldMap",
