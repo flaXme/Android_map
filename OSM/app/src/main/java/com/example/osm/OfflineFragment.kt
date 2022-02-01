@@ -67,7 +67,7 @@ class OfflineFragment : Fragment() {
             )
         )
         map.minZoomLevel= 3.0
-
+        map.tileProvider.setUseDataConnection(false)
 
         //enable pinch zoom in.
         map.setBuiltInZoomControls(true)
