@@ -6,12 +6,9 @@ import android.content.pm.PackageManager
 import android.graphics.Paint
 import android.net.ConnectivityManager
 import android.net.Uri
-import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
-import android.text.format.Formatter.formatIpAddress
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,10 +17,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker.checkSelfPermission
 import androidx.fragment.app.Fragment
 import org.osmdroid.config.Configuration
-import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.cachemanager.CacheManager
 import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
 import org.osmdroid.tileprovider.tilesource.XYTileSource
@@ -31,7 +26,6 @@ import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import java.util.*
@@ -48,25 +42,13 @@ class OnlineFragment : Fragment() {
     private lateinit var map : MapView;
     @Volatile
     var rectangle: MutableList<Marker> = ArrayList()
-    var startAndEnd: MutableList<GeoPoint> = ArrayList()
     lateinit var  subGraph: Graph
     lateinit var downloadArea: BoundingBox
-    lateinit var ip: String
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        /**
-         * get ip address of the user
-         */
-        val context = requireContext().applicationContext
-        val wm = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        ip  = formatIpAddress(wm.connectionInfo.ipAddress)
-        Log.d("ip-address",ip)
-
-
         /**
          * Inflate the layout for this fragment
          */
@@ -104,34 +86,6 @@ class OnlineFragment : Fragment() {
         map.zoomController.setVisibility(CustomZoomButtonsController.Visibility.ALWAYS)
         map.setMultiTouchControls(true)
 
-
-
-        /**
-         * add marker onclick, click on existing marker will remove the marker
-         */
-        val mReceive = object : MapEventsReceiver {
-            //single click to select subgraph area, i.e. rectangle
-            override fun singleTapConfirmedHelper(p: GeoPoint):Boolean{
-                return false
-            }
-            //long click to select start and end point.
-            override fun longPressHelper(p: GeoPoint): Boolean {
-                Toast.makeText(activity,"Start/End point selected.", Toast.LENGTH_SHORT).show()
-                val marker = Marker(map)
-                //click existing marker to delete it.
-                marker.setOnMarkerClickListener { marker, map ->
-                    Toast.makeText(activity, "Start/End point deleted.", Toast.LENGTH_SHORT).show()
-                    startAndEnd.remove(marker.position)
-                    map.overlays.remove(marker)
-                }
-                marker.position=p
-                map.overlays.add(marker)
-                startAndEnd.add(p)
-                map.invalidate()
-                return false
-            }
-        }
-        map.overlays.add(MapEventsOverlay(mReceive))
 
 
         /**
@@ -295,50 +249,9 @@ class OnlineFragment : Fragment() {
 
 
         /**
-         * compute path button:
-         */
-        val sendDownloadRequestButton: Button = view.findViewById(R.id.download)
-        val computePathButton: Button = view.findViewById(R.id.computePath)
-        computePathButton.setOnClickListener{
-            //check read external permission
-            if(activity?.let { it1 -> checkSelfPermission(it1,"android.permission.READ_EXTERNAL_STORAGE") } != PackageManager.PERMISSION_GRANTED){
-                //if permission is not granted
-                requestPermissions(arrayOf("android.permission.READ_EXTERNAL_STORAGE"),200);
-            }else{//permission already granted
-                if (startAndEnd.size == 2) {
-                    var start = startAndEnd[0]
-                    var end = startAndEnd[1]
-                    //check whether start and end point are in the area.
-                    var graphData =
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/osm/data/graphData.txt")
-                    subGraph = Graph(graphData.absolutePath)
-//                     val latInSubgraph:Boolean =
-//                         start.latitude >= subGraph.minLat &&
-//                             start.latitude <= subGraph.maxLat &&
-//                             end.latitude >= subGraph.minLat &&
-//                             end.latitude <= subGraph.maxLat
-//                     val longiInSubgraph:Boolean =
-//                         start.longitude >= subGraph.minLongi &&
-//                                 start.longitude <= subGraph.maxLongi &&
-//                                 end.longitude >= subGraph.minLongi &&
-//                                 end.longitude <= subGraph.maxLongi
-//                     val startEndInSubgraph:Boolean = latInSubgraph && longiInSubgraph
-                    if (true) {
-                        var startId = subGraph.nearestNeighbour(start.latitude, start.longitude)
-                        var endId = subGraph.nearestNeighbour(end.latitude, end.longitude)
-                        computePath(startId, endId)
-                    }else{
-                        Toast.makeText(activity, "Start or End point is not in subgraph!", Toast.LENGTH_SHORT).show()
-                    }
-                }else{
-                    Toast.makeText(activity,"Need exactly two markers for start and end!", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-        }
-        /**
          * download button
          */
+        val sendDownloadRequestButton: Button = view.findViewById(R.id.download)
         sendDownloadRequestButton.setOnClickListener {
             if(rectangle.size == 4) {
                 //check internet connection
@@ -415,8 +328,7 @@ class OnlineFragment : Fragment() {
      */
     private fun download(minLat:Double, maxLat:Double, minLong:Double, maxLong:Double){
         //download graph data:
-        //user defined server ip
-        val dataUrl = "http://192.168.0.10:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
+        val dataUrl = "http://192.168.178.21:8000/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
         //val dataUrl = "http://$ip:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
         val dataRequest = DownloadManager.Request(Uri.parse(dataUrl))
             .setTitle("graphDataDownloadRequest")

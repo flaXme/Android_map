@@ -58,6 +58,8 @@ public class MyServer {
                 double n = Double.parseDouble(m.group());
                 argsForSubGraph.add(n);
             }
+            System.out.println(exchange.getRequestURI().toString());
+            System.out.println(argsForSubGraph);
              return argsForSubGraph;
         }
         
@@ -79,12 +81,11 @@ public class MyServer {
 
     
     public static void main(String[] args) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8081),0);
-        String hostName = server.getAddress().getHostName();
+        HttpServer server = HttpServer.create(new InetSocketAddress(8000),0);
         server.createContext("/subgraph", new MyHttpHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
-        System.out.println("server started. host name is "+ hostName);
+        System.out.println("server started.");
     }
     
     

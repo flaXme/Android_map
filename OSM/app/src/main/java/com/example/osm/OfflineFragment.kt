@@ -199,7 +199,6 @@ class OfflineFragment : Fragment() {
             path.outlinePaint.strokeJoin = Paint.Join.ROUND
             path.outlinePaint.strokeCap = Paint.Cap.ROUND
             map.overlays.add(path)
-            map.controller.setCenter(path.actualPoints.get(0))
             map.invalidate()
         }else{
             Toast.makeText(activity, "No path Available!", Toast.LENGTH_SHORT).show()
