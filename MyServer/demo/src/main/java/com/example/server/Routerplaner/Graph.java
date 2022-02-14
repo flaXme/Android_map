@@ -14,7 +14,7 @@ import java.util.HashMap;
 public class Graph {
 	private int nodeNr;//number of the nodes
 	private int edgeNr;//number of the edges
-	private int lengthOfEdgeElement = 3;//Edge Element consist of endNode and metric vector
+	private int lengthOfEdgeElement = 5;//Edge Element consist of endNode and metric vector
 	private double[] latitude;//mapping: nodeId -> latitude of that node
 	private double[] longitude;//mapping: nodeId -> longitude of that node
 	private int[] nrOfOutgoingEdges;//mapping: nodeId -> number of outgoing edges of that node
@@ -80,6 +80,10 @@ public class Graph {
 				index++;
 				edgeArray[index] = Integer.parseInt(tempStringArray[2]);//store cost of edge i
 				index++;
+				edgeArray[index] = Integer.parseInt(tempStringArray[5]);//store cost of edge i
+				index++;
+				edgeArray[index] = Integer.parseInt(tempStringArray[6]);//store cost of edge i
+				index++;
 			}
 			
 			br.close();
@@ -95,6 +99,9 @@ public class Graph {
 		}
 	}
 
+	int[] getEdge(int edgeId){
+        return Arrays.copyOfRange(edgeArray, edgeId * lengthOfEdgeElement, edgeId * lengthOfEdgeElement + lengthOfEdgeElement);
+    }
 
 	int[] getEdgeArray() {
 		return edgeArray;
