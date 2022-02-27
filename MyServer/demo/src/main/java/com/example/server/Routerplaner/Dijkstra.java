@@ -56,11 +56,11 @@ public class Dijkstra {
 						// }else{
 						// 	updateParents(out[3], out[4]);
 						// }
-						// if (heap.posInHeap[out[i+1]] != -1) {// in heap
-						// 	heap.decreaseKey(out[i+1], dis[out[i]] + out[i+2]);
-						// }else {
+						 if (heap.posInHeap[out[i+1]] != -1) {// in heap
+						 	heap.decreaseKey(out[i+1], dis[out[i]] + out[i+2]);
+						 }else {
 							heap.add(out[i+1], dis[out[i+1]]);
-						//}
+						}
 					}
 				}
 				
@@ -169,7 +169,7 @@ public class Dijkstra {
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
 		//int start = (int) (Math.random() * g.getNodeNr());	
-		int start = 3000;
+		int start = 4343;
 		
 		//int target = (int) (Math.random() * g.getNodeNr());
 		int target = 5353;
@@ -179,6 +179,7 @@ public class Dijkstra {
 		System.out.println("start: " + start);
 		System.out.println("target: " + target);
 		Dijkstra dij = new Dijkstra(g, start, target);
+		System.out.println("Cost: " + dij.dis[target]);
 		System.out.println("not available: "+dij.getPathAvailable());
 		
 		System.out.println(dij.getShortestPathInLonLat());

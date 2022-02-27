@@ -59,6 +59,10 @@ public class MinHeap {
 		return min;
 	}
 
+	int[] peek(){
+		return new int[] {nodeIdAt[0],cost[0]};
+	}
+
 	private void heapifyUP(int from) {
 		int current = from;
 		while(cost[current] < cost[parent(current)]) {

@@ -3,6 +3,7 @@ package com.example.server.Routerplaner;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
@@ -62,14 +63,14 @@ public class DijkstraWithCH {
 				return vector1[1] - vector2[1];
 			}
 		};
-		PriorityQueue<int[]> upwardHeap = new PriorityQueue<>(distanceComparator);
-		PriorityQueue<int[]> downwardHeap = new PriorityQueue<>(distanceComparator);
-		//MinHeap upwardHeap = new MinHeap(graph.getNodeNr());
-		//MinHeap downwardHeap = new MinHeap(graph.getNodeNr());
+		//PriorityQueue<int[]> upwardHeap = new PriorityQueue<>(distanceComparator);
+		//PriorityQueue<int[]> downwardHeap = new PriorityQueue<>(distanceComparator);
+		MinHeap upwardHeap = new MinHeap(graph.getNodeNr());
+		MinHeap downwardHeap = new MinHeap(graph.getNodeNr());
 		nodesReachedByUpward = new HashSet<Integer>();
 		nodesReachedByDownward = new HashSet<Integer>();
-		upwardHeap.add(new int[] {source, 0});
-		downwardHeap.add(new int[] {target, 0});
+		upwardHeap.add(source, 0);
+		downwardHeap.add(target, 0);
 		
 		boolean haltCondition = false;
 		boolean settledUpward = false;
@@ -96,11 +97,18 @@ public class DijkstraWithCH {
 			//upward search:
 			if(settledUpward){
 				int[] out = graph.getOutgoingEdgesArrayUpwardIndex(globalMin[0]);
-				int startIndex = out[0];
-				int endIndex = out[1];
-				int length = endIndex - startIndex + 1;
-				int[] edgeArray = graph.getUpwardEdgeArray();
+				int startIndex = -1;
+				int endIndex = -1;
+				int length = 0;
+				if(out != null){
+					startIndex = out[0];
+					endIndex = out[1];
+					length = endIndex - startIndex + 1;
+				}else{
+					length = 0;
+				}
 				if(length != 0) {
+					int[] edgeArray = graph.getUpwardEdgeArray();
 					for (int i = startIndex; i < endIndex; i += graph.getLengthOfEdgeElement()) {
 						if (upwardDis[edgeArray[i]] + edgeArray[i+2] < upwardDis[edgeArray[i+1]]) {
 							upwardDis[edgeArray[i+1]] = upwardDis[edgeArray[i]] + edgeArray[i+2];
@@ -111,20 +119,27 @@ public class DijkstraWithCH {
 								//updateParentsRecursive(tempEdgearray);
 								//updateParents(edgeArray[3], edgeArray[4]);
 							//}
-							//if (upwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
-							//	upwardHeap.decreaseKey(edgeArray[i+1], upwardDis[edgeArray[i]] + edgeArray[i+2]);
-							//}else {
-							upwardHeap.add(new int[] {edgeArray[i+1], upwardDis[edgeArray[i+1]]});
+							if (upwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
+								upwardHeap.decreaseKey(edgeArray[i+1], upwardDis[edgeArray[i]] + edgeArray[i+2]);
+							}else {
+							upwardHeap.add(edgeArray[i+1], upwardDis[edgeArray[i+1]]);
 							System.out.println(edgeArray[i+1]+" with cost "+upwardDis[edgeArray[i+1]]+" in upward Heap added.");
-							//}
+							}
 						}
 					}
 				}
 			}else{//downward search
 				int[] out = graph.getOutgoingEdgesArrayDownwardIndex(globalMin[0]);
-				int startIndex = out[0];
-				int endIndex = out[1];
-				int length = endIndex - startIndex + 1;
+				int startIndex = -1;
+				int endIndex = -1;
+				int length = 0;
+				if(out != null){
+					startIndex = out[0];
+					endIndex = out[1];
+					length = endIndex - startIndex + 1;
+				}else{
+					length = 0;
+				}
 				if(length != 0) {
 					int[] edgeArray = graph.getDownwardEdgeArray();
 					for (int i = startIndex; i < endIndex; i += graph.getLengthOfEdgeElement()) {
@@ -137,12 +152,12 @@ public class DijkstraWithCH {
 								//updateParentsRecursive(tempEdgearray);
 								//updateParents(edgeArray[3], edgeArray[4]);
 							//}
-							// if (downwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
-							// 	downwardHeap.decreaseKey(edgeArray[i+1], downwardDis[edgeArray[i]] + edgeArray[i+2]);
-							// }else {
-							downwardHeap.add(new int[]{edgeArray[i+1], downwardDis[edgeArray[i+1]]});
+							if (downwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
+							 	downwardHeap.decreaseKey(edgeArray[i+1], downwardDis[edgeArray[i]] + edgeArray[i+2]);
+							}else {
+							downwardHeap.add(edgeArray[i+1], downwardDis[edgeArray[i+1]]);
 							System.out.println(edgeArray[i+1]+" with cost "+downwardDis[edgeArray[i+1]]+" in downwards Heap added.");
-							//}
+							}
 						}
 					}
 				}
@@ -224,7 +239,7 @@ public class DijkstraWithCH {
 		int[] backwardPathUp = new int[graph.getNodeNr()];
 		int[] backwardPathDown = new int[graph.getNodeNr()];
 		int upwardNodeNr = 1;
-		int downwardNodeNr = 1;
+		int downwardNodeNr = 0;
 		for(int i = 0; i < backwardPathUp.length; i++) {
 			backwardPathUp[i] = -1;
 			backwardPathDown[i] = -1;
@@ -241,10 +256,11 @@ public class DijkstraWithCH {
 			}
 		}
 		backwardPathUp[i] = source;
+		upwardNodeNr++;
 		//downwards:
 		backwardPathDown[0] = middleNodeInShortestPath;
 		tmp = middleNodeInShortestPath;
-		for( i = 1; downwardParent[tmp] != target; i++) {
+		for( i = 0; downwardParent[tmp] != target; i++) {
 			backwardPathDown[i] = downwardParent[tmp];
 			tmp= downwardParent[tmp];
 			downwardNodeNr++;
@@ -253,6 +269,7 @@ public class DijkstraWithCH {
 			}
 		}
 		backwardPathDown[i] = target;
+		downwardNodeNr++;
 		//concatinate two path:
 		int[] result = new int[upwardNodeNr + downwardNodeNr];
 		i = 0;
@@ -270,19 +287,41 @@ public class DijkstraWithCH {
 			result[i] = backwardPathDown[j];
 			i++;
 		}
+		result = expandShortcuts(result);
 		return result;
+	}
+
+	private int[] expandShortcuts(int[] path){
+		int[] resultWithoutShortcut;
+		boolean shortcutExpaned = true;
+		LinkedList<Integer> listWithoutShortcut = new LinkedList<>();
+		for(int i = 0; i < path.length; i++){
+			listWithoutShortcut.add(path[i]);
+		}
+		while(shortcutExpaned){
+			shortcutExpaned = false;
+			for (int i = 0; i < listWithoutShortcut.size() - 1; i++) {
+				int[] outgoingEdges = graph.getOutgingEdgesArray(listWithoutShortcut.get(i));
+				for (int j = 0; j < outgoingEdges.length; j+=graph.getLengthOfEdgeElement()) {
+					if(outgoingEdges[j+1] == listWithoutShortcut.get(i+1) && outgoingEdges[j+3] != -1){
+						shortcutExpaned = true;
+						System.out.println("shortcut expanded.");
+						listWithoutShortcut.add(i+1, graph.getEdge(outgoingEdges[j+3])[1]);
+						break;//no second shortcut between two nodes.
+					}
+				}
+			}
+		}
+		resultWithoutShortcut = new int[listWithoutShortcut.size()];
+		for (int i = 0; i < resultWithoutShortcut.length; i++) {
+			resultWithoutShortcut[i] = listWithoutShortcut.get(i);
+		}
+		return resultWithoutShortcut;
 	}
 	
 	public String getShortestPathInLonLat(){
 		int[] path = getShortestPathInNodeId();
 		int pathLength = path.length;
-		// for(int i = 0; i < path.length; i++) {
-		// 	if(path[i] != -1){
-		// 		pathLength++;
-		// 	}else{
-		// 		break;
-		// 	}
-		// }
 		double[][] shortestPathInLonLat = new double[pathLength][2];
 		for(int i = 0; i < pathLength; i++) {
 			shortestPathInLonLat[i][0] = graph.getLongitude(path[i]);
@@ -297,7 +336,7 @@ public class DijkstraWithCH {
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		
 		//int start = (int) (Math.random() * g.getNodeNr());	
-		int start = 3000;
+		int start = 4343;
 		
 		//int target = (int) (Math.random() * g.getNodeNr());
 		int target = 5353;
