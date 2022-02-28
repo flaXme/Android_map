@@ -48,7 +48,7 @@ public class Dijkstra {
 			int[] out = graph.getOutgingEdgesArray(min[0]);
 			
 			if(out != null) {//out = [startId, endId, cost, firstSubEdge, secondSubEdge]
-				for (int i = 0; i < out.length; i += 5) {
+				for (int i = 0; i < out.length; i += graph.getLengthOfEdgeElement()) {
 					if (dis[out[i]] + out[i+2] < dis[out[i+1]]) {
 						dis[out[i+1]] = dis[out[i]] + out[i+2];
 						//if(out[3] == -1){
@@ -165,9 +165,9 @@ public class Dijkstra {
 	}
 
 	public static void main(String[] args) {
-		//Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/Graphfiles/germany.txt");
+		Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/Graphfiles/germany.txt");
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
-		Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
+		//Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
 		//int start = (int) (Math.random() * g.getNodeNr());	
 		int start = 4343;
 		

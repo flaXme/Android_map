@@ -1,0 +1,49 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Launch App",
+            "request": "launch",
+            "mainClass": "com.example.server.App",
+            "projectName": "demo"
+        },
+        {
+            "type": "java",
+            "name": "Launch Dijkstra",
+            "request": "launch",
+            "mainClass": "com.example.server.Routerplaner.Dijkstra",
+            "projectName": "demo"
+        },
+        {
+            "type": "java",
+            "name": "Launch DijkstraWithCH",
+            "request": "launch",
+            "mainClass": "com.example.server.Routerplaner.DijkstraWithCH",
+            "projectName": "demo"
+        },
+        {
+            "type": "java",
+            "name": "Launch GraphWithCH",
+            "request": "launch",
+            "mainClass": "com.example.server.Routerplaner.GraphWithCH",
+            "projectName": "demo"
+        },
+        {
+            "type": "java",
+            "name": "Launch MyServer",
+            "request": "launch",
+            "mainClass": "com.example.server.Routerplaner.MyServer",
+            "projectName": "demo"
+        }
+    ]
+}

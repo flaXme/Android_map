@@ -27,7 +27,6 @@ public class GraphWithCH {
 	private int[] upwardNodeArray;// mapping: nodeId -> index of edgeArray for that node. 
 	private int[] downwardNodeArray;
     private int[] nodeLevel;// mapping: nodeId -> node level
-    private boolean[] isShortcut;
 	private int[] upwardEdgeArray;
 	private int[] downwardEdgeArray;
 	private int[] edgeArray;
@@ -72,7 +71,6 @@ public class GraphWithCH {
 			downwardNodeArray = new int[nodeNr];
 			edgeArray = new int[edgeNr * lengthOfEdgeElement];
             nodeLevel = new int[nodeNr];//init
-            isShortcut = new boolean[edgeNr];//init
 
 			String line;
 			// initialize nodeArray and fill lat long array, the level of the nodes are stored as well.
@@ -87,6 +85,7 @@ public class GraphWithCH {
                 nodeLevel[i] = Integer.valueOf(tempString[5]);// store node level of node i
                 upwardNodeArray[i] = -1;
 				downwardNodeArray[i] = -1;
+				nodeArray[i] = -1;
 			}
             //count number of up and downward edge:
 			int index = 0;
@@ -113,9 +112,6 @@ public class GraphWithCH {
 					nrOfDownwardEdge++;
 					count[end]++;
 				}
-                if(firstSubEdgeId != -1){
-                    isShortcut[i] = true;
-                }
 				edgeArray[index] = start;
 				index++;
 				edgeArray[index] = end;
@@ -126,18 +122,20 @@ public class GraphWithCH {
 				index++;
 				edgeArray[index] = secondSubEdgeId;
 				index++;
-
+				//System.out.println("start:" + start + " end: " + end + " cost: " + cost + " firstSubE: " + firstSubEdgeId + " secondSubE: " + secondSubEdgeId);
 			}
+
 			int[] startIndexOfDownwardsEdge = new int[nodeNr];
 			for (int i = 0; i < startIndexOfDownwardsEdge.length; i++) {
 				startIndexOfDownwardsEdge[i] = 0;
 			}
-			for (int i = 0; i < nodeNr; i++) {
-				for (int j = 0; j < i; j++) {
-					startIndexOfDownwardsEdge[i] += count[j];
-				}
+			for (int i = 1; i < nodeNr; i++) {
+				startIndexOfDownwardsEdge[i] = startIndexOfDownwardsEdge[i-1] + count[i-1];
+			}
+			for (int i = 0; i < startIndexOfDownwardsEdge.length; i++) {
 				startIndexOfDownwardsEdge[i] *= lengthOfEdgeElement;
 			}
+
 			upwardEdgeArray = new int[nrOfUpwardEdge * lengthOfEdgeElement];
 			downwardEdgeArray = new int[nrOfDownwardEdge * lengthOfEdgeElement];
 			br.close();
@@ -190,7 +188,7 @@ public class GraphWithCH {
 					startIndexOfDownwardsEdge[end] += lengthOfEdgeElement;
 				}
 			}
-			//reorderEdgeArray();
+			
 			br.close();
 			//fill nodeArray and nrOfoutgoingEdges array.
 			for (int i = 0; i < nrOfUpwardEdge; i++) {
@@ -206,7 +204,8 @@ public class GraphWithCH {
 				nrOfOutgoingEdgesDownward[downwardEdgeArray[i * lengthOfEdgeElement]] += 1;//count the number of outgoing edge for start node of every edge.
 			}
 			for (int i = 0; i < edgeNr; i++) {
-				if (nodeArray[edgeArray[i * lengthOfEdgeElement]] == -1) {//if the start if edge i is not in nodeArray initialized
+
+				if (nodeArray[edgeArray[i * lengthOfEdgeElement]] == -1) {//if the start of edge i is not in nodeArray initialized
 					nodeArray[edgeArray[i * lengthOfEdgeElement]] = i * lengthOfEdgeElement;//then save the index of edgeArray in nodeArray
 				}
 				nrOfOutgoingEdges[edgeArray[i * lengthOfEdgeElement]] += 1;//count the number of outgoing edge for start node of every edge.
@@ -228,12 +227,20 @@ public class GraphWithCH {
 		return downwardEdgeArray;
 	}
 
+	int[] getEdgeArray(){
+		return edgeArray;
+	}
+
 	int[] getUpwardNodeArray() {
 		return upwardNodeArray;
 	}
 
 	int[] getDowwardNodeArray(){
 		return downwardNodeArray;
+	}
+
+	int[] getNodeArray(){
+		return nodeArray;
 	}
 
 	int getNrOfOutgoingEdgesUpward(int nodeID) {
@@ -248,66 +255,11 @@ public class GraphWithCH {
         return lengthOfEdgeElement;
     }
 
-	void swapEdgeInformation(int indexOne, int indexTwo){
-		int tempStart = downwardEdgeArray[indexOne];
-		int tempEnd = downwardEdgeArray[indexOne + 1];
-		int tempCost = downwardEdgeArray[indexOne + 2];
-		int tempFistSubedgeId = downwardEdgeArray[indexOne + 3];
-		int tempSecondSubedgeId = downwardEdgeArray[indexTwo + 4];
-		downwardEdgeArray[indexOne] = downwardEdgeArray[indexTwo];
-		downwardEdgeArray[indexOne + 1] = downwardEdgeArray[indexTwo + 1];
-		downwardEdgeArray[indexOne + 2] = downwardEdgeArray[indexTwo + 2];
-		downwardEdgeArray[indexOne + 3] = downwardEdgeArray[indexTwo + 3];
-		downwardEdgeArray[indexOne + 4] = downwardEdgeArray[indexTwo + 4];
-		downwardEdgeArray[indexTwo] = tempStart;
-		downwardEdgeArray[indexTwo + 1] = tempEnd;
-		downwardEdgeArray[indexTwo + 2] = tempCost;
-		downwardEdgeArray[indexTwo + 3] = tempFistSubedgeId;
-		downwardEdgeArray[indexTwo + 4] = tempSecondSubedgeId;
-	}
 
-	void reorderEdgeArray(){
-		System.out.println();
-		System.out.println("Reordering edges...");
-		long startTime = System.currentTimeMillis();
-		int indexOfNextEdge = 0;
-		boolean reordered = false;
-		for(int i = 0; i < downwardEdgeArray.length; i = indexOfNextEdge){
-			if (i % 10000 == 0){
-				System.out.print("#");
-			}
-			int currentStart = downwardEdgeArray[i];
-			int j;
-			if(!reordered){//the last node has only one outgoing edge.
-				i += lengthOfEdgeElement;
-				indexOfNextEdge += lengthOfEdgeElement;
-			}
-			reordered = false;
-			for (j = indexOfNextEdge; j < downwardEdgeArray.length; j+= lengthOfEdgeElement) {
-				if(downwardEdgeArray[j] != currentStart){
-					continue;
-				}else{
-					swapEdgeInformation(indexOfNextEdge, j);
-					reordered = true;
-					indexOfNextEdge += lengthOfEdgeElement;
-				}
-			}
-		}
-		long endTime = System.currentTimeMillis();
-		long totalTime = endTime - startTime;
-		totalTime = totalTime / (1000*60);//time in minutes.
-		System.out.println();
-		System.out.println("Reordering downward edges took [" + totalTime +"] minutes");
-	}
 
-	int[] getOutgingEdgesArray(int nodeID) {
-		if (nrOfOutgoingEdges[nodeID] >= 1) {
-			int startIndex = nodeArray[nodeID];
-			int endIndex = nrOfOutgoingEdges[nodeID] * lengthOfEdgeElement + startIndex;
-			return Arrays.copyOfRange(edgeArray, startIndex, endIndex);
-		}
-		return null;
-	}
+	
+
+	
 
 	public int getNodeNr() {
 		return nodeNr;
@@ -344,6 +296,16 @@ public class GraphWithCH {
 		if (nrOfOutgoingEdgesDownward[nodeID] >= 1) {
 			int startIndex = downwardNodeArray[nodeID];
 			int endIndex = getNrOfOutgoingEdgesDownward(nodeID) * lengthOfEdgeElement + startIndex;
+			int[] startAndEnd = {startIndex, endIndex};
+			return startAndEnd;
+		}
+		return null;
+	}
+
+	public int[] getOutgoingEdgesArrayIndex(int nodeID) {
+		if (nrOfOutgoingEdges[nodeID] >= 1) {
+			int startIndex = nodeArray[nodeID];
+			int endIndex = nrOfOutgoingEdges[nodeID] * lengthOfEdgeElement + startIndex;
 			int[] startAndEnd = {startIndex, endIndex};
 			return startAndEnd;
 		}
@@ -458,14 +420,17 @@ public class GraphWithCH {
 		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
 		int[] upwardEdge = g.getUpwardEdgeArray();
 		int[] downwardEdge = g.getDownwardEdgeArray();
+		int[] edgesindex = g.getOutgoingEdgesArrayIndex(4343);
+		int[] edges = g.getEdgeArray();
+		System.out.println("start: " + edges[edgesindex[0]] + " end: " + edges[edgesindex[0]+1] + " cost: " + edges[edgesindex[0]+2] + " firstE: " +edges[edgesindex[0]+3] + " secondE: "+ edges[edgesindex[0]+4]);
 		System.out.println("Upward:");
 		// for (int i = 0; i < upwardEdge.length; i+=5) {
 		// 	System.out.println(upwardEdge[i]+","+upwardEdge[i+1]+","+upwardEdge[i+2]+","+upwardEdge[i+3]+","+upwardEdge[i+4]);
 		// }
 		System.out.println("Downward:");
-		for (int i = 0; i < downwardEdge.length; i+=5) {
-			System.out.println(downwardEdge[i]+","+downwardEdge[i+1]+","+downwardEdge[i+2]+","+downwardEdge[i+3]+","+downwardEdge[i+4]);
-		}
+		// for (int i = 0; i < downwardEdge.length; i+=5) {
+		// 	System.out.println(downwardEdge[i]+","+downwardEdge[i+1]+","+downwardEdge[i+2]+","+downwardEdge[i+3]+","+downwardEdge[i+4]);
+		// }
 	}
 }
 
