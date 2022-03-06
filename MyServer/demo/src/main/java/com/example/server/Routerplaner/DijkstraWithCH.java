@@ -292,15 +292,19 @@ public class DijkstraWithCH {
 	}
 	
 	public String getShortestPathInLonLat(){
-		int[] path = getShortestPathInNodeId();
-		int pathLength = path.length;
-		double[][] shortestPathInLonLat = new double[pathLength][2];
-		for(int i = 0; i < pathLength; i++) {
-			shortestPathInLonLat[i][0] = graph.getLongitude(path[i]);
-			shortestPathInLonLat[i][1] = graph.getLatitude(path[i]);
+		if(available){
+			int[] path = getShortestPathInNodeId();
+			int pathLength = path.length;
+			double[][] shortestPathInLonLat = new double[pathLength][2];
+			for(int i = 0; i < pathLength; i++) {
+				shortestPathInLonLat[i][0] = graph.getLongitude(path[i]);
+				shortestPathInLonLat[i][1] = graph.getLatitude(path[i]);
+			}
+			String pathInLonLat = Arrays.deepToString(shortestPathInLonLat);
+			return pathInLonLat;
+		}else{
+			return "[" + source + ", "+ target + "]";
 		}
-		String pathInLonLat = Arrays.deepToString(shortestPathInLonLat);
-		return pathInLonLat;
 	}
 
 	public static void main(String[] args) {
@@ -308,10 +312,10 @@ public class DijkstraWithCH {
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		
 		//int start = (int) (Math.random() * g.getNodeNr());	
-		int start = 4344;
+		int start = 0;
 		
 		//int target = (int) (Math.random() * g.getNodeNr());
-		int target = 5353;
+		int target = 1;
 		
 		System.out.println("start: " + start);
 		System.out.println("target: " + target);

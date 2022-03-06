@@ -10,7 +10,7 @@ public class Dijkstra {
 	private int[] dis;
 	private int[] parent;
 	private Graph graph;
-	private int start;
+	private int source;
 	private int target;
 	private int nrOfVisitedNodes;
 	private boolean available = false;
@@ -22,7 +22,7 @@ public class Dijkstra {
 	 * @param target targetnodeId
 	 *
 	 */
-	public Dijkstra(Graph graph, int start, int target){
+	public Dijkstra(Graph graph, int s, int t){
 		if(printInformation != 0){
 			System.out.println("computing dijkstra...");
 		}
@@ -31,20 +31,20 @@ public class Dijkstra {
 		this.dis = new int[graph.getNodeNr()];
 		this.parent = new int[graph.getNodeNr()];
 		this.graph = graph;
-		this.start = start;
-		this.target = target;
+		this.source = s;
+		this.target = t;
 		
 		for (int i = 0; i < graph.getNodeNr(); i++) {
 			dis[i] = Integer.MAX_VALUE;
 			parent[i] = -1; // no parent
 		}
 		
-		parent[start] = start;
-		dis[start] = 0;
+		parent[source] = source;
+		dis[source] = 0;
 		
 		MinHeap heap = new MinHeap(graph.getNodeNr());
 		
-		heap.add(start, 0);
+		heap.add(source, 0);
 		
 		while(heap.getSize() > 0) {
 			int[] min = heap.remove();
@@ -102,16 +102,16 @@ public class Dijkstra {
 	public int[] getShortestPathTo() {
 		int[] backwardPath = new int[graph.getNodeNr()];
 		for(int i = 0; i < backwardPath.length; i++) {
-			backwardPath[i] = -7;
+			backwardPath[i] = -1;
 		}
 		backwardPath[0] = target;
 		int tmp = target;
 		int i;
-		for( i = 1; parent[tmp] != start; i++) {
+		for( i = 1; parent[tmp] != source; i++) {
 			backwardPath[i] = parent[tmp];
 			tmp= parent[tmp];
 		}
-		backwardPath[i] = start;
+		backwardPath[i] = source;
 		return backwardPath;
 	}
 	
@@ -120,7 +120,7 @@ public class Dijkstra {
 			int[] path = getShortestPathTo();
 			int pathLength = 0;
 			for(int i = 0; i < path.length; i++) {
-				if(path[i] != -7){
+				if(path[i] != -1){
 					pathLength++;
 				}else{
 					break;
@@ -134,7 +134,7 @@ public class Dijkstra {
 			String pathInLonLat = Arrays.deepToString(shortestPathInLonLat);
 			return pathInLonLat;
 		}else{
-			return null;
+			return "[" + source + ", "+ target + "]";
 		}
 	}
 
@@ -142,11 +142,12 @@ public class Dijkstra {
 		Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/Graphfiles/germany.txt");
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		//Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
+
 		//int start = (int) (Math.random() * g.getNodeNr());	
-		int start = 14729716;
+		int start = 0;//14729716;
 		
 		//int target = (int) (Math.random() * g.getNodeNr());
-		int target = 1732736;
+		int target = 1;//1732736;
 		
 		System.out.println("start: " + start);
 		System.out.println("target: " + target);
