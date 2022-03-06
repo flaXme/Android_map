@@ -17,9 +17,9 @@ import org.apache.commons.text.StringEscapeUtils;
 public class MyServer {
     //handler for http request
     private static class MyHttpHandler implements HttpHandler{
-        public Graph g;
+        public GraphWithCH g;
         public MyHttpHandler(){
-            g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/Graphfiles/germany.fmi");
+            g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
         }
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -40,7 +40,6 @@ public class MyServer {
                 System.out.println("minLong = "+minLong);
                 System.out.println("maxLong = "+maxLong);
                 subgraph = g.calculateSubgraph(minLat, maxLat, minLong, maxLong);
-                System.out.println("\ncomputing subgraph finished.");
             }
             handleResponse(exchange, subgraph);
         }

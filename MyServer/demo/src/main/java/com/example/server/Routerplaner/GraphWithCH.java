@@ -5,8 +5,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.stream.StreamSupport;
 
-import org.apache.commons.text.ExtendedMessageFormat;
 
 /**
  * read static Graph date from File represent it as Arrays
@@ -16,7 +17,7 @@ import org.apache.commons.text.ExtendedMessageFormat;
 public class GraphWithCH {
 	private int nodeNr;//number of the nodes
 	private int edgeNr;//number of the edges
-	private int lengthOfEdgeElement = 5;//Edge Element consist of start node, endNode , metric vector and two indecies of edges of shortcut
+	private int lengthOfEdgeElement = 5;//Edge Element consist of start nodeID, endNodeID , metric vector and two id of subedges of shortcut
 	private double[] latitude;//mapping: nodeId -> latitude of that node
 	private double[] longitude;//mapping: nodeId -> longitude of that node
 	private int[] nrOfOutgoingEdgesUpward;//mapping: nodeId -> number of outgoing edges of that node
@@ -219,6 +220,10 @@ public class GraphWithCH {
         return Arrays.copyOfRange(edgeArray, edgeId * lengthOfEdgeElement, edgeId * lengthOfEdgeElement + lengthOfEdgeElement);
     }
 
+	int getEdgeId(int startIndex){
+		return startIndex / lengthOfEdgeElement;
+	}
+
 	int[] getUpwardEdgeArray() {
 		return upwardEdgeArray;
 	}
@@ -312,16 +317,6 @@ public class GraphWithCH {
 		return null;
 	}
 
-
-	// public int maxNrOfOutgoingEdges(){
-	// 	int max = 0;
-	// 	for(int i = 0; i < nodeNr; i++){
-	// 		if(getNrOfOutgoingEdges(i) > max){
-	// 			max = getNrOfOutgoingEdges(i);
-	// 		}
-	// 	}
-	// 	return max;
-	// }
 	/**
 	 * Given a nodeId and four argument about the chosen area, check whether the node is in the area.
 	 * @param nodeId the node to be checked.
@@ -360,6 +355,29 @@ public class GraphWithCH {
 		//if a node is in subgraph w.r.t. both longitude and latitude, then the node is indeed in the subgraph
 		return inLongitudeInterval && inLatitudeInterval;
 	}
+	/**
+	 * recuresively determine whether an edge is in the subgraph
+	 * @param edgeId
+	 * @param minLatitude
+	 * @param maxLatitude
+	 * @param minLongitude
+	 * @param maxLongitude
+	 * @return
+	 */
+	public boolean edgeInSubgraph(final int edgeId,final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
+		int[] edge = getEdge(edgeId);//edge is in the format: [startId, endId, cost, firstSubedgeId, secondSubedegeId]
+		int start = edge[0];
+		int end = edge[1];
+		int firstSubEdge = edge[3];
+		int secondSubEdge = edge[4];
+		if(!nodeInSubgraph(start, minLatitude, maxLatitude, minLongitude, maxLongitude) || !nodeInSubgraph(end, minLatitude, maxLatitude, minLongitude, maxLongitude)){
+			return false;
+		}else if(firstSubEdge == -1 ){
+			return true;
+		}else{
+			return edgeInSubgraph(firstSubEdge, minLatitude, maxLatitude, minLongitude, maxLongitude) && edgeInSubgraph(secondSubEdge, minLatitude, maxLatitude, minLongitude, maxLongitude);
+		}
+	}
 
 
 	/**
@@ -371,66 +389,71 @@ public class GraphWithCH {
 	 * @return the String representation of the subgraph
 	 */
 	public String calculateSubgraph(final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
-		String subgraphString = "\n";//the subgraph String starts with a blank line, for consistency reason.
+		String subgraphString = "";
 		System.out.print("calculating subgraph:");
 		// check all nodes whether they are part of the subgraph:
 		int newNodeId = 0;//new nodeId of subgraph
-		HashMap<Integer,Integer> newIdOf = new HashMap<Integer,Integer>();//mapping: oldNodeId -> newNodeId
+		HashMap<Integer,Integer> newIdOfNode = new HashMap<Integer,Integer>();//mapping: oldNodeId -> newNodeId
 		for(int i = 0; i<nodeNr;i++){
 			if (i % 1000000 == 0){
 				System.out.print("#");//loading bar for nodes.
 			}
 			if(nodeInSubgraph(i, minLatitude, maxLatitude, minLongitude, maxLongitude)){
-				//node information format: oldId, newId, latitude, longitude. separate with one space
-				subgraphString = subgraphString + Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + "\n";
+				//check whether the node has outgoing edges that goes across the bounding box
+				int oldNrOfOutgoingEdges = nrOfOutgoingEdges[i];//the number of original outgoing edges
+				//node information format: oldId, newId, latitude, longitude, cornerCase, level, separate with one space
+				subgraphString = subgraphString + Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + " " + Integer.toString(oldNrOfOutgoingEdges) + " " + Integer.toString(nodeLevel[i]) + "\n";
 				//save the new id of nodes in subgraph.
-				newIdOf.put(i, newNodeId);
+				newIdOfNode.put(i, newNodeId);
 				//next new id of the node in subgraph, will be invalid(off by +1) after the last for-iteration
 				newNodeId++;
 			}
 		}
 
-		//check all edges, whether they are part of the subgraph:(an edge is in the subgraph iff both of its ends are in the subgraph)
-		// int edgeCounter = 0;
-		// for (int i = 0; i < edgeArray.length; i+=lengthOfEdgeElement) {
-		// 	if (i % 1000000 == 0){
-		// 		System.out.print("$");//loading bar for edges.
-		// 	}
-		// 	if(nodeInSubgraph(edgeArray[i], minLatitude, maxLatitude, minLongitude, maxLongitude) && nodeInSubgraph(edgeArray[i+1], minLatitude, maxLatitude, minLongitude, maxLongitude)){
-		// 		//count the current edge as edges in subgraph
-		// 		edgeCounter++;
-		// 		int startNode = edgeArray[i];
-		// 		int endNode = edgeArray[i+1];
-		// 		//edge information format: newId of startNode, newId of endNode, cost. separate with one space
-		// 		subgraphString = subgraphString + Integer.toString(newIdOf.get(startNode)) + " " + Integer.toString(newIdOf.get(endNode)) + " " + Integer.toString(edgeArray[i+2]) + "\n";
-		// 	}
-		// }
+		//check all edges, whether they are part of the subgraph:(an edge is in the subgraph iff both of its ends are in the subgraph and all its subedges are in the subgraph)
+		int edgeCounter = 0;
+		LinkedHashMap<Integer, Integer> newIdOfEdge = new LinkedHashMap<>();//mapping: old edge id -> new edge id
+		//go through the edge array and recored the new edge ids
+		for (int i = 0; i < edgeArray.length; i+=lengthOfEdgeElement) {
+			if (i % 1000000 == 0){
+				System.out.print("$");//loading bar for edges.
+			}
+			int edgeId = getEdgeId(i);
+			if(edgeInSubgraph(edgeId, minLatitude, maxLatitude, minLongitude, maxLongitude)){
+				//System.out.println("edge " + edgeId + " is in the subgraph.");
+				newIdOfEdge.put(edgeId, edgeCounter);
+				//count the number of edge in subgraph
+				edgeCounter++;
+			}
+		}
+		//go through the edge array again and copy the edges in the bounding box.
+		for (Integer i : newIdOfEdge.keySet()) {
+			int[] edgeArray = getEdge(i);	
+			int startNode = edgeArray[0];
+			int endNode = edgeArray[1];
+			int cost = edgeArray[2];
+			int firstSubEdgeId;
+			int secondSubedegeId;
+			if(edgeArray[3] != -1){
+				firstSubEdgeId = newIdOfEdge.get(edgeArray[3]);
+				secondSubedegeId = newIdOfEdge.get(edgeArray[4]);
+			}else{
+				firstSubEdgeId = -1;
+				secondSubedegeId = -1;
+			}
+			//edge information format: newId of startNode, newId of endNode, cost. id1, id2 separate with one space
+			subgraphString = subgraphString + Integer.toString(newIdOfNode.get(startNode)) + " " + Integer.toString(newIdOfNode.get(endNode)) + " " + Integer.toString(cost) + " " + Integer.toString(firstSubEdgeId) + " " + Integer.toString(secondSubedegeId) + "\n";
+		}
 
 		//add number of nodes and number of edges at begin of the string.
-		//subgraphString = "#\n#This is the subgraph. \n" + Integer.toString(newNodeId) + "\n" + Integer.toString(edgeCounter) + "\n" + subgraphString;
-		// try {
-		// 	Thread.sleep(5000);
-		// } catch (InterruptedException e) {
-		// 	// TODO Auto-generated catch block
-		// 	e.printStackTrace();
-		// }
+		subgraphString = "#\n#This is the subgraph. \n\n" + Integer.toString(newNodeId)  + "\n" + Integer.toString(edgeCounter) + "\n" + subgraphString;
+		System.out.println("Computing subgraph finished!");
 		return subgraphString;
 	}
 	public static void main(String[] args) {
 		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
-		int[] upwardEdge = g.getUpwardEdgeArray();
-		int[] downwardEdge = g.getDownwardEdgeArray();
-		int[] edgesindex = g.getOutgoingEdgesArrayIndex(4343);
-		int[] edges = g.getEdgeArray();
-		System.out.println("start: " + edges[edgesindex[0]] + " end: " + edges[edgesindex[0]+1] + " cost: " + edges[edgesindex[0]+2] + " firstE: " +edges[edgesindex[0]+3] + " secondE: "+ edges[edgesindex[0]+4]);
-		System.out.println("Upward:");
-		// for (int i = 0; i < upwardEdge.length; i+=5) {
-		// 	System.out.println(upwardEdge[i]+","+upwardEdge[i+1]+","+upwardEdge[i+2]+","+upwardEdge[i+3]+","+upwardEdge[i+4]);
-		// }
-		System.out.println("Downward:");
-		// for (int i = 0; i < downwardEdge.length; i+=5) {
-		// 	System.out.println(downwardEdge[i]+","+downwardEdge[i+1]+","+downwardEdge[i+2]+","+downwardEdge[i+3]+","+downwardEdge[i+4]);
-		// }
+		String subgraph = g.calculateSubgraph(48.744679999999995, 48.75184598260022, 9.100138609509344, 9.112503723550901);
+		//System.out.println(subgraph);
 	}
 }
 

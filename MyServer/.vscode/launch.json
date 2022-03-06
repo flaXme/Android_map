@@ -8,42 +8,48 @@
             "type": "java",
             "name": "Launch Current File",
             "request": "launch",
-            "mainClass": "${file}"
+            "mainClass": "${file}",
+            "vmArgs": "-Xmx12G"
         },
         {
             "type": "java",
             "name": "Launch App",
             "request": "launch",
             "mainClass": "com.example.server.App",
-            "projectName": "demo"
+            "projectName": "demo",
+            "vmArgs": "-Xmx12G"
         },
         {
             "type": "java",
             "name": "Launch Dijkstra",
             "request": "launch",
             "mainClass": "com.example.server.Routerplaner.Dijkstra",
-            "projectName": "demo"
+            "projectName": "demo",
+            "vmArgs": "-Xmx12G"
         },
         {
             "type": "java",
             "name": "Launch DijkstraWithCH",
             "request": "launch",
             "mainClass": "com.example.server.Routerplaner.DijkstraWithCH",
-            "projectName": "demo"
+            "projectName": "demo",
+            "vmArgs": "-Xmx12G"
         },
         {
             "type": "java",
             "name": "Launch GraphWithCH",
             "request": "launch",
             "mainClass": "com.example.server.Routerplaner.GraphWithCH",
-            "projectName": "demo"
+            "projectName": "demo",
+            "vmArgs": "-Xmx12G"
         },
         {
             "type": "java",
             "name": "Launch MyServer",
             "request": "launch",
             "mainClass": "com.example.server.Routerplaner.MyServer",
-            "projectName": "demo"
+            "projectName": "demo",
+            "vmArgs": "-Xmx12G"
         }
     ]
 }

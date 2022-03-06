@@ -1,12 +1,9 @@
 package com.example.server.Routerplaner;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.Stack;
 
 public class DijkstraWithCH {
 	private int[] upwardDis;
@@ -56,15 +53,7 @@ public class DijkstraWithCH {
 		
 		upwardDis[source] = 0;
 		downwardDis[target] = 0;
-		
-		Comparator<int[]> distanceComparator = new Comparator<int[]>(){
-			@Override
-			public int compare(int[] vector1,int[] vector2){
-				return vector1[1] - vector2[1];
-			}
-		};
-		//PriorityQueue<int[]> upwardHeap = new PriorityQueue<>(distanceComparator);
-		//PriorityQueue<int[]> downwardHeap = new PriorityQueue<>(distanceComparator);
+
 		MinHeap upwardHeap = new MinHeap(graph.getNodeNr());
 		MinHeap downwardHeap = new MinHeap(graph.getNodeNr());
 		nodesReachedByUpward = new HashSet<Integer>();
@@ -113,17 +102,12 @@ public class DijkstraWithCH {
 						if (upwardDis[edgeArray[i]] + edgeArray[i+2] < upwardDis[edgeArray[i+1]]) {
 							upwardDis[edgeArray[i+1]] = upwardDis[edgeArray[i]] + edgeArray[i+2];
 							nodesReachedByUpward.add(edgeArray[i+1]);
-							//if(edgeArray[i+3] == -1){//if the edge is a normal edge
 							upwardParent[edgeArray[i+1]] = edgeArray[i];
-							//}else{// if the edge is a short cut, update all parents.
-								//updateParentsRecursive(tempEdgearray);
-								//updateParents(edgeArray[3], edgeArray[4]);
-							//}
 							if (upwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
 								upwardHeap.decreaseKey(edgeArray[i+1], upwardDis[edgeArray[i]] + edgeArray[i+2]);
 							}else {
 							upwardHeap.add(edgeArray[i+1], upwardDis[edgeArray[i+1]]);
-							System.out.println(edgeArray[i+1]+" with cost "+upwardDis[edgeArray[i+1]]+" in upward Heap added.");
+							//System.out.println(edgeArray[i+1]+" with cost "+upwardDis[edgeArray[i+1]]+" in upward Heap added.");
 							}
 						}
 					}
@@ -146,17 +130,12 @@ public class DijkstraWithCH {
 						if (downwardDis[edgeArray[i]] + edgeArray[i+2] < downwardDis[edgeArray[i+1]]) {
 							downwardDis[edgeArray[i+1]] = downwardDis[edgeArray[i]] + edgeArray[i+2];
 							nodesReachedByDownward.add(edgeArray[i+1]);
-							//if(edgeArray[i+3] == -1){//if the edge is a normal edge
 							downwardParent[edgeArray[i+1]] = edgeArray[i];
-							//}else{// if the edge is a short cut, update all parents.
-								//updateParentsRecursive(tempEdgearray);
-								//updateParents(edgeArray[3], edgeArray[4]);
-							//}
 							if (downwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
 							 	downwardHeap.decreaseKey(edgeArray[i+1], downwardDis[edgeArray[i]] + edgeArray[i+2]);
 							}else {
 							downwardHeap.add(edgeArray[i+1], downwardDis[edgeArray[i+1]]);
-							System.out.println(edgeArray[i+1]+" with cost "+downwardDis[edgeArray[i+1]]+" in downwards Heap added.");
+							//System.out.println(edgeArray[i+1]+" with cost "+downwardDis[edgeArray[i+1]]+" in downwards Heap added.");
 							}
 						}
 					}
@@ -170,41 +149,7 @@ public class DijkstraWithCH {
 		System.out.println("Dijkstra Computation with CH took ["+time+"] milli seconds");
 		
 	}
-    //update parents of node in a shortcut
-    // private void updateParents(final int firstEdge, final int secondEdge){
-    //     int tempFirstEdge = firstEdge;
-    //     int tempSecondEdge = secondEdge;
-    //     Stack<Integer> edgesToBeExpand = new Stack<Integer>();
-    //     edgesToBeExpand.push(tempFirstEdge);
-    //     edgesToBeExpand.push(tempSecondEdge);
-
-    //     int tempEdgeId = -1;
-    //     while(!edgesToBeExpand.isEmpty()){
-    //         tempEdgeId = edgesToBeExpand.pop();
-    //         int[] tempEdgeArray = graph.getEdge(tempEdgeId);// [start, target, cost, first subEdgeId, second subEdgeId]
-	// 		//System.out.println(tempEdgeArray[0]+"\n");
-    //         parent[tempEdgeArray[1]] = tempEdgeArray[0];        //update parents
-
-    //         tempFirstEdge = tempEdgeArray[3];
-    //         tempSecondEdge = tempEdgeArray[4];
-    //         if(tempFirstEdge != -1){
-    //             edgesToBeExpand.push(tempFirstEdge);
-    //             edgesToBeExpand.push(tempSecondEdge);
-    //         }
-    //     }
-    // }
-	// private void updateParentsRecursive(final int[] tempEdgeArray) {
-	// 	int start = tempEdgeArray[0];
-	// 	int end = tempEdgeArray[1];
-	// 	int edge1 = tempEdgeArray[3];
-	// 	int edge2 = tempEdgeArray[4];
-	// 	if(edge1 != -1) {
-	// 		updateParentsRecursive(graph.getEdge(edge1));
-	// 		updateParentsRecursive(graph.getEdge(edge2));
-	// 	}else{
-	// 		parent[end] = start;
-	// 	}
-	// }
+    
 
 	public boolean getPathAvailable(){
 		return notAvailable;
@@ -216,14 +161,14 @@ public class DijkstraWithCH {
 
 
 	public int[] getShortestPathInNodeId() {
-		System.out.println("Nodes reached by upward:");
-		for (int i : nodesReachedByUpward) {
-			System.out.println(i);
-		}
-		System.out.println("Node reached by downward:");
-		for (int i : nodesReachedByDownward) {
-			System.out.println(i);
-		}
+		// System.out.println("Nodes reached by upward:");
+		// for (int i : nodesReachedByUpward) {
+		// 	System.out.println(i);
+		// }
+		// System.out.println("Node reached by downward:");
+		// for (int i : nodesReachedByDownward) {
+		// 	System.out.println(i);
+		// }
 		Set<Integer> intersection = new HashSet<Integer>(nodesReachedByUpward);
 		intersection.retainAll(nodesReachedByDownward);
 		int shortestDis = Integer.MAX_VALUE;
@@ -298,10 +243,10 @@ public class DijkstraWithCH {
 		for(int i = 0; i < path.length; i++){
 			listWithoutShortcut.add(path[i]);
 		}
-		System.out.println("node list of path:");
-		for (Integer integer : listWithoutShortcut) {
-			System.out.println(integer);
-		}
+		// System.out.println("node list of path:");
+		// for (Integer integer : listWithoutShortcut) {
+		// 	System.out.println(integer);
+		// }
 		while(shortcutExpaned){
 			shortcutExpaned = false;
 			for (int i = 0; i < listWithoutShortcut.size() - 1; i++) {
@@ -341,7 +286,7 @@ public class DijkstraWithCH {
 	}
 
 	public static void main(String[] args) {
-		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
+		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		
 		//int start = (int) (Math.random() * g.getNodeNr());	
