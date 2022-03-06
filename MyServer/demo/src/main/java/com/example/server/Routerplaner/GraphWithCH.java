@@ -451,7 +451,7 @@ public class GraphWithCH {
 		return subgraphString;
 	}
 	public static void main(String[] args) {
-		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
+		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
 		String subgraph = g.calculateSubgraph(48.744679999999995, 48.75184598260022, 9.100138609509344, 9.112503723550901);
 		//System.out.println(subgraph);
 	}

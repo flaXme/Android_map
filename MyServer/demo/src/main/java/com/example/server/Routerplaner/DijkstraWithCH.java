@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.Set;
 
 public class DijkstraWithCH {
+	int printInformation = 0;
 	private int[] upwardDis;
 	private int[] downwardDis;
 	private int[] upwardParent;
@@ -14,11 +15,12 @@ public class DijkstraWithCH {
 	private int source;
 	private int target;
 	private int nrOfVisitedNodes;
-	private boolean notAvailable;
+	private boolean available = false;
 	private Set<Integer> settledNodes;
 	private Set<Integer> nodesReachedByUpward;
 	private Set<Integer> nodesReachedByDownward;
 	private int middleNodeInShortestPath = -1;
+	private int costOfPath = 0;
 	
 	/**
 	 * computes the shortest path given the parameters
@@ -28,7 +30,9 @@ public class DijkstraWithCH {
 	 *
 	 */
 	public DijkstraWithCH(GraphWithCH graph, int s, int t){
-		System.out.println("computing dijkstra...");
+		if(printInformation != 0){
+			System.out.println("computing dijkstra...");
+		}
 		nrOfVisitedNodes = 0;
 		long sTime = System.currentTimeMillis();
 		this.upwardDis = new int[graph.getNodeNr()];
@@ -38,7 +42,6 @@ public class DijkstraWithCH {
 		this.graph = graph;
 		this.source = s;
 		this.target = t;
-		this.notAvailable = true;
 		settledNodes = new HashSet<>();
 		
 		for (int i = 0; i < graph.getNodeNr(); i++) {
@@ -64,6 +67,7 @@ public class DijkstraWithCH {
 		boolean haltCondition = false;
 		boolean settledUpward = false;
 		boolean settledDownward = false;
+		int currentCostOfShortestPath = Integer.MAX_VALUE;
 		int[] globalMin;
 		while(!haltCondition) {
 			settledUpward = false;
@@ -76,12 +80,17 @@ public class DijkstraWithCH {
 				settledDownward = true;
 			}
 			if(settledNodes.contains(globalMin[0])){
-				System.out.println("First node settled twice: "+globalMin[0]);
-				haltCondition = true;
-				notAvailable = false;
-				break;
+				int distance = upwardDis[globalMin[0]] + downwardDis[globalMin[0]];
+				if(distance < currentCostOfShortestPath){
+					currentCostOfShortestPath = distance;
+				}
 			}else{
 				settledNodes.add(globalMin[0]);
+			}
+			if((settledUpward && upwardDis[globalMin[0]] > currentCostOfShortestPath) || (settledDownward && downwardDis[globalMin[0]] > currentCostOfShortestPath)){
+				available = true;
+				haltCondition = true;
+				break;
 			}
 			//upward search:
 			if(settledUpward){
@@ -146,17 +155,23 @@ public class DijkstraWithCH {
 		}
 		long eTime = System.currentTimeMillis();
 		long time = eTime - sTime;
-		System.out.println("Dijkstra Computation with CH took ["+time+"] milli seconds");
+		if(printInformation != 0){
+			System.out.println("Dijkstra Computation with CH took ["+time+"] milli seconds");
+		}
 		
 	}
     
 
 	public boolean getPathAvailable(){
-		return notAvailable;
+		return available;
 	}
 	
 	public int getNrOfVisitedNodes(){
 		return nrOfVisitedNodes;
+	}
+
+	public int getCostOfPath(){
+		return costOfPath;
 	}
 
 
@@ -179,7 +194,10 @@ public class DijkstraWithCH {
 				middleNodeInShortestPath = nodeId;
 			}
 		}
-		System.out.println("the meeting point is "+middleNodeInShortestPath+". The cost is "+shortestDis);
+		costOfPath = shortestDis;
+		if(printInformation != 0){
+			System.out.println("the meeting point is "+middleNodeInShortestPath+". The cost is "+shortestDis);
+		}
 		//upwards:
 		int[] backwardPathUp = new int[graph.getNodeNr()];
 		int[] backwardPathDown = new int[graph.getNodeNr()];
@@ -298,7 +316,7 @@ public class DijkstraWithCH {
 		System.out.println("start: " + start);
 		System.out.println("target: " + target);
 		DijkstraWithCH dij = new DijkstraWithCH(g, start, target);
-		System.out.println("not available: "+dij.getPathAvailable());
+		System.out.println("available: "+dij.getPathAvailable());
 		System.out.println(dij.getShortestPathInLonLat());
 		
 	}

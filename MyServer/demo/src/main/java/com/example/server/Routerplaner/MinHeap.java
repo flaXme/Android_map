@@ -10,15 +10,15 @@ public class MinHeap {
 	 * @param capacity : int number, the given size
 	 */
 	MinHeap(int capacity){
-		this.size = 0;//how many element in heap
-		this.nodeIdAt = new int[capacity];
-		this.cost = new int[capacity];
-		this.posInHeap = new int[capacity];
+		this.size = 0;//current number of element in heap
+		this.nodeIdAt = new int[capacity];//mapping: heap position -> nodeId at that position
+		this.cost = new int[capacity];// mapping: heap position -> cost at that position
+		this.posInHeap = new int[capacity];//mapping: nodeId -> position in heap
 		
 		for (int i = 0; i < capacity; i++) {
 			nodeIdAt[i] = -1;//heap is empty
-			cost[i] = Integer.MAX_VALUE;
-			posInHeap[i] = -1;
+			cost[i] = Integer.MAX_VALUE;//initialize cost as max value
+			posInHeap[i] = -1;// no element is in heap
 		}
 	}
 	/**
