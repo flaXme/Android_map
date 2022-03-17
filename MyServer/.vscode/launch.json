@@ -6,6 +6,14 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch SubgraphEvaluation",
+            "request": "launch",
+            "mainClass": "com.example.server.Routerplaner.SubgraphEvaluation",
+            "projectName": "demo",
+            "vmArgs": "-Xmx12G"
+        },
+        {
+            "type": "java",
             "name": "Launch Evaluation",
             "request": "launch",
             "mainClass": "com.example.server.Routerplaner.Evaluation",

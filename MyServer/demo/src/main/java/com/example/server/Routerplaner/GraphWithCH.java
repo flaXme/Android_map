@@ -33,6 +33,10 @@ public class GraphWithCH {
 	private int[] edgeArray;
 	private int nrOfUpwardEdge;
 	private int nrOfDownwardEdge;
+	private double minLatOfGraph = Double.MAX_VALUE;
+	private double maxLatOfGraph = Double.MIN_VALUE;
+	private double minLongOfGraph = Double.MAX_VALUE;
+	private double maxLongOfGraph = Double.MIN_VALUE;
 	
 	/**
 	 * Constructor of the class Graph
@@ -49,6 +53,7 @@ public class GraphWithCH {
 		System.out.println();
 		System.out.println("Reading file took [" + totalTime +"] milliseconds");
 	}
+
 	/**
 	 * main function of read graph information from the file.
 	 * @param path
@@ -84,6 +89,18 @@ public class GraphWithCH {
 				latitude[i] = Double.valueOf(tempString[2]);//store latitude of node i
 				longitude[i] = Double.valueOf(tempString[3]);//store longitude of node i
                 nodeLevel[i] = Integer.valueOf(tempString[5]);// store node level of node i
+				if(latitude[i] < minLatOfGraph){
+					minLatOfGraph = latitude[i];
+				}
+				if(latitude[i] > maxLatOfGraph){
+					maxLatOfGraph = latitude[i];
+				}
+				if(longitude[i] < minLongOfGraph){
+					minLongOfGraph = longitude[i];
+				}
+				if(longitude[i] > maxLongOfGraph){
+					maxLongOfGraph = longitude[i];
+				}
                 upwardNodeArray[i] = -1;
 				downwardNodeArray[i] = -1;
 				nodeArray[i] = -1;
@@ -214,6 +231,22 @@ public class GraphWithCH {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public double getMinLatOfGraph(){
+		return this.minLatOfGraph;
+	}
+
+	public double getMaxLatOfGraph(){
+		return this.maxLatOfGraph;
+	}
+
+	public double getMinLongOfGraph(){
+		return this.minLongOfGraph;
+	}
+
+	public double getMaxLongOfGraph(){
+		return this.maxLongOfGraph;
 	}
 
     int[] getEdge(int edgeId){

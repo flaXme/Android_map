@@ -5,11 +5,11 @@ import java.util.Stack;
 
 import com.example.server.Localisation.*;
 
-public class Dijkstra {
+public class SubgraphDij {
 	int printInformation = 0;
 	private int[] dis;
 	private int[] parent;
-	private Graph graph;
+	private Subgraph graph;
 	private int source;
 	private int target;
 	private int nrOfSettledNodes;
@@ -22,7 +22,7 @@ public class Dijkstra {
 	 * @param target targetnodeId
 	 *
 	 */
-	public Dijkstra(Graph graph, int s, int t){
+	public SubgraphDij(Subgraph graph, int s, int t){
 		if(printInformation != 0){
 			System.out.println("computing dijkstra...");
 		}
@@ -136,26 +136,5 @@ public class Dijkstra {
 		}else{
 			return "[" + source + ", "+ target + "]";
 		}
-	}
-
-	public static void main(String[] args) {
-		Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/Graphfiles/germany.txt");
-		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
-		//Graph g = new Graph("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_stuttgart.txt");
-
-		//int start = (int) (Math.random() * g.getNodeNr());	
-		int start = 0;//14729716;
-		
-		//int target = (int) (Math.random() * g.getNodeNr());
-		int target = 1;//1732736;
-		
-		System.out.println("start: " + start);
-		System.out.println("target: " + target);
-		Dijkstra dij = new Dijkstra(g, start, target);
-		System.out.println("Cost: " + dij.dis[target]);
-		System.out.println("path available: "+dij.getPathAvailable());
-		
-		//System.out.println(dij.getShortestPathInLonLat());
-		
 	}
 }

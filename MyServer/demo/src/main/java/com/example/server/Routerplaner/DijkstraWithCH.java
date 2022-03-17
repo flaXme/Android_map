@@ -1,5 +1,6 @@
 package com.example.server.Routerplaner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -14,13 +15,15 @@ public class DijkstraWithCH {
 	private GraphWithCH graph;
 	private int source;
 	private int target;
-	private int nrOfVisitedNodes;
+	private int nrOfSettledNodes;
 	private boolean available = false;
-	private Set<Integer> settledNodes;
-	private Set<Integer> nodesReachedByUpward;
-	private Set<Integer> nodesReachedByDownward;
+	//private Set<Integer> settledNodes;
+	//private Set<Integer> nodesReachedByUpward;
+	//private Set<Integer> nodesReachedByDownward;
 	private int middleNodeInShortestPath = -1;
 	private int costOfPath = 0;
+	private ArrayList<Integer> reachedNodes;
+	public static boolean[] settledNodes;
 	
 	/**
 	 * computes the shortest path given the parameters
@@ -33,7 +36,7 @@ public class DijkstraWithCH {
 		if(printInformation != 0){
 			System.out.println("computing dijkstra...");
 		}
-		nrOfVisitedNodes = 0;
+		nrOfSettledNodes= 0;
 		long sTime = System.currentTimeMillis();
 		this.upwardDis = new int[graph.getNodeNr()];
 		this.downwardDis = new int[graph.getNodeNr()];
@@ -42,8 +45,10 @@ public class DijkstraWithCH {
 		this.graph = graph;
 		this.source = s;
 		this.target = t;
-		settledNodes = new HashSet<>();
-		
+		this.reachedNodes = new ArrayList<Integer>();
+		//settledNodes = new HashSet<>();
+		//settledNodes = new boolean[graph.getNodeNr()];
+
 		for (int i = 0; i < graph.getNodeNr(); i++) {
 			upwardDis[i] = Integer.MAX_VALUE;
 			downwardDis[i] = Integer.MAX_VALUE;
@@ -59,8 +64,8 @@ public class DijkstraWithCH {
 
 		MinHeap upwardHeap = new MinHeap(graph.getNodeNr());
 		MinHeap downwardHeap = new MinHeap(graph.getNodeNr());
-		nodesReachedByUpward = new HashSet<Integer>();
-		nodesReachedByDownward = new HashSet<Integer>();
+		//nodesReachedByUpward = new HashSet<Integer>();
+		//nodesReachedByDownward = new HashSet<Integer>();
 		upwardHeap.add(source, 0);
 		downwardHeap.add(target, 0);
 		
@@ -72,6 +77,9 @@ public class DijkstraWithCH {
 		while(!haltCondition) {
 			settledUpward = false;
 			settledDownward = false;
+			if(upwardHeap.getSize() == 0 && downwardHeap.getSize() == 0){
+				break;
+			}
 			if(upwardHeap.peek()[1] < downwardHeap.peek()[1]){
 				globalMin = upwardHeap.remove();
 				settledUpward = true;
@@ -79,13 +87,15 @@ public class DijkstraWithCH {
 				globalMin = downwardHeap.remove();
 				settledDownward = true;
 			}
-			if(settledNodes.contains(globalMin[0])){
+			//if(settledNodes.contains(globalMin[0])){//boolean array
+			if(settledNodes[globalMin[0]] == true){
 				int distance = upwardDis[globalMin[0]] + downwardDis[globalMin[0]];
 				if(distance < currentCostOfShortestPath){
 					currentCostOfShortestPath = distance;
 				}
 			}else{
-				settledNodes.add(globalMin[0]);
+				//settledNodes.add(globalMin[0]);
+				settledNodes[globalMin[0]] = true;
 			}
 			if((settledUpward && upwardDis[globalMin[0]] > currentCostOfShortestPath) || (settledDownward && downwardDis[globalMin[0]] > currentCostOfShortestPath)){
 				available = true;
@@ -110,7 +120,8 @@ public class DijkstraWithCH {
 					for (int i = startIndex; i < endIndex; i += graph.getLengthOfEdgeElement()) {
 						if (upwardDis[edgeArray[i]] + edgeArray[i+2] < upwardDis[edgeArray[i+1]]) {
 							upwardDis[edgeArray[i+1]] = upwardDis[edgeArray[i]] + edgeArray[i+2];
-							nodesReachedByUpward.add(edgeArray[i+1]);
+							//nodesReachedByUpward.add(edgeArray[i+1]);//
+							reachedNodes.add(edgeArray[i+1]);
 							upwardParent[edgeArray[i+1]] = edgeArray[i];
 							if (upwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
 								upwardHeap.decreaseKey(edgeArray[i+1], upwardDis[edgeArray[i]] + edgeArray[i+2]);
@@ -138,7 +149,8 @@ public class DijkstraWithCH {
 					for (int i = startIndex; i < endIndex; i += graph.getLengthOfEdgeElement()) {
 						if (downwardDis[edgeArray[i]] + edgeArray[i+2] < downwardDis[edgeArray[i+1]]) {
 							downwardDis[edgeArray[i+1]] = downwardDis[edgeArray[i]] + edgeArray[i+2];
-							nodesReachedByDownward.add(edgeArray[i+1]);
+							//nodesReachedByDownward.add(edgeArray[i+1]);
+							reachedNodes.add(edgeArray[i+1]);
 							downwardParent[edgeArray[i+1]] = edgeArray[i];
 							if (downwardHeap.posInHeap[edgeArray[i+1]] != -1) {// in heap
 							 	downwardHeap.decreaseKey(edgeArray[i+1], downwardDis[edgeArray[i]] + edgeArray[i+2]);
@@ -150,7 +162,7 @@ public class DijkstraWithCH {
 					}
 				}
 			}
-			
+			nrOfSettledNodes++;
 			
 		}
 		long eTime = System.currentTimeMillis();
@@ -166,8 +178,8 @@ public class DijkstraWithCH {
 		return available;
 	}
 	
-	public int getNrOfVisitedNodes(){
-		return nrOfVisitedNodes;
+	public int getNrOfSettledNodes(){
+		return nrOfSettledNodes;
 	}
 
 	public int getCostOfPath(){
@@ -184,10 +196,22 @@ public class DijkstraWithCH {
 		// for (int i : nodesReachedByDownward) {
 		// 	System.out.println(i);
 		// }
-		Set<Integer> intersection = new HashSet<Integer>(nodesReachedByUpward);
-		intersection.retainAll(nodesReachedByDownward);
+		long sTime = System.currentTimeMillis();
+		//Set<Integer> intersection = new HashSet<Integer>(nodesReachedByUpward);
+		//intersection.retainAll(nodesReachedByDownward);
 		int shortestDis = Integer.MAX_VALUE;
-		for (Integer nodeId : intersection) {
+		// for (Integer nodeId : intersection) {
+		// 	int completeDis = upwardDis[nodeId] + downwardDis[nodeId];
+		// 	if(completeDis < shortestDis){
+		// 		shortestDis = completeDis;
+		// 		middleNodeInShortestPath = nodeId;
+		// 	}
+		// }
+
+		for (int nodeId : reachedNodes) {
+			if(upwardDis[nodeId] == Integer.MAX_VALUE || downwardDis[nodeId] == Integer.MAX_VALUE){
+				continue;
+			}
 			int completeDis = upwardDis[nodeId] + downwardDis[nodeId];
 			if(completeDis < shortestDis){
 				shortestDis = completeDis;
@@ -195,9 +219,12 @@ public class DijkstraWithCH {
 			}
 		}
 		costOfPath = shortestDis;
+		long etime = System.currentTimeMillis();
+		long time = etime - sTime;
 		if(printInformation != 0){
-			System.out.println("the meeting point is "+middleNodeInShortestPath+". The cost is "+shortestDis);
+			System.out.println("the meeting point is "+middleNodeInShortestPath+". The cost is "+shortestDis + ". Finding middle point takes ["+time+"]ms.");
 		}
+		sTime = System.currentTimeMillis();
 		//upwards:
 		int[] backwardPathUp = new int[graph.getNodeNr()];
 		int[] backwardPathDown = new int[graph.getNodeNr()];
@@ -251,6 +278,13 @@ public class DijkstraWithCH {
 			i++;
 		}
 		result = expandShortcuts(result);
+		etime = System.currentTimeMillis();
+		time = etime -sTime;
+		System.out.println("concatinate path takes: ["+time+"]ms.");
+		//reset reachedNodes array
+		for (int nodeId : reachedNodes) {
+			settledNodes[nodeId] = false;
+		}
 		return result;
 	}
 
@@ -319,6 +353,7 @@ public class DijkstraWithCH {
 		
 		System.out.println("start: " + start);
 		System.out.println("target: " + target);
+		DijkstraWithCH.settledNodes = new boolean[g.getNodeNr()];
 		DijkstraWithCH dij = new DijkstraWithCH(g, start, target);
 		System.out.println("available: "+dij.getPathAvailable());
 		System.out.println(dij.getShortestPathInLonLat());
