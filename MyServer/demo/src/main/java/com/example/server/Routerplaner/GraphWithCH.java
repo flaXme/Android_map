@@ -37,6 +37,7 @@ public class GraphWithCH {
 	private double maxLatOfGraph = Double.MIN_VALUE;
 	private double minLongOfGraph = Double.MAX_VALUE;
 	private double maxLongOfGraph = Double.MIN_VALUE;
+	private int maxLevel = -1;
 	
 	/**
 	 * Constructor of the class Graph
@@ -89,6 +90,9 @@ public class GraphWithCH {
 				latitude[i] = Double.valueOf(tempString[2]);//store latitude of node i
 				longitude[i] = Double.valueOf(tempString[3]);//store longitude of node i
                 nodeLevel[i] = Integer.valueOf(tempString[5]);// store node level of node i
+				if(nodeLevel[i] > maxLevel){
+					maxLevel = nodeLevel[i];
+				}
 				if(latitude[i] < minLatOfGraph){
 					minLatOfGraph = latitude[i];
 				}
@@ -231,6 +235,14 @@ public class GraphWithCH {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public int getNodeLevel(int nodeId){
+		return nodeLevel[nodeId];
+	}
+
+	public int getMaxLevel(){
+		return maxLevel;
 	}
 
 	public double getMinLatOfGraph(){

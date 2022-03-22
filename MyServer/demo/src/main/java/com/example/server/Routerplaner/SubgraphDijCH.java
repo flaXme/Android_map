@@ -20,6 +20,7 @@ public class SubgraphDijCH {
     private Set<Integer> nodesReachedByDownward;
     private int middleNodeInShortestPath = -1;
     private int costOfPath = 0;
+    private boolean pathWithNodeInCornerCase = false;
 
     /**
      * computes the shortest path given the parameters
@@ -111,6 +112,9 @@ public class SubgraphDijCH {
                         if (upwardDis[edgeArray[i]] + edgeArray[i + 2] < upwardDis[edgeArray[i + 1]]) {
                             upwardDis[edgeArray[i + 1]] = upwardDis[edgeArray[i]] + edgeArray[i + 2];
                             nodesReachedByUpward.add(edgeArray[i + 1]);
+                            if(graph.nodeInCorner(edgeArray[i + 1]) == 1){
+                                pathWithNodeInCornerCase = true;
+                            }
                             upwardParent[edgeArray[i + 1]] = edgeArray[i];
                             if (upwardHeap.posInHeap[edgeArray[i + 1]] != -1) {// in heap
                                 upwardHeap.decreaseKey(edgeArray[i + 1], upwardDis[edgeArray[i]] + edgeArray[i + 2]);
@@ -139,6 +143,9 @@ public class SubgraphDijCH {
                         if (downwardDis[edgeArray[i]] + edgeArray[i + 2] < downwardDis[edgeArray[i + 1]]) {
                             downwardDis[edgeArray[i + 1]] = downwardDis[edgeArray[i]] + edgeArray[i + 2];
                             nodesReachedByDownward.add(edgeArray[i + 1]);
+                            if(graph.nodeInCorner(edgeArray[i + 1]) == 1){
+                                pathWithNodeInCornerCase = true;
+                            }
                             downwardParent[edgeArray[i + 1]] = edgeArray[i];
                             if (downwardHeap.posInHeap[edgeArray[i + 1]] != -1) {// in heap
                                 downwardHeap.decreaseKey(edgeArray[i + 1], downwardDis[edgeArray[i]] + edgeArray[i + 2]);
@@ -173,6 +180,9 @@ public class SubgraphDijCH {
         return costOfPath;
     }
 
+    boolean getPathWithNodeInCornerCase(){
+        return pathWithNodeInCornerCase;
+    }
 
     public int[] getShortestPathInNodeId() {
         Set<Integer> intersection = new HashSet<Integer>(nodesReachedByUpward);

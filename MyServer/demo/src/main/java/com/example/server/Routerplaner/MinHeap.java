@@ -1,10 +1,14 @@
 package com.example.server.Routerplaner;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+
 public class MinHeap {
 	private int size;
 	private int[] nodeIdAt;//indicate the nodeId at correspond index, equals -1 if node not in heap
 	private int[] cost; // indicate the cost of the node/given index
 	public int[] posInHeap;//indicate the heap position/index of a nodeid
+
 	/**
 	 * Constructor of heap with given size
 	 * @param capacity : int number, the given size
@@ -14,7 +18,8 @@ public class MinHeap {
 		this.nodeIdAt = new int[capacity];//mapping: heap position -> nodeId at that position
 		this.cost = new int[capacity];// mapping: heap position -> cost at that position
 		this.posInHeap = new int[capacity];//mapping: nodeId -> position in heap
-		
+
+
 		for (int i = 0; i < capacity; i++) {
 			nodeIdAt[i] = -1;//heap is empty
 			cost[i] = Integer.MAX_VALUE;//initialize cost as max value
@@ -42,7 +47,6 @@ public class MinHeap {
 		int[] min = {nodeIdAt[0], cost[0]};
 		
 		if (size != 1) {// more than 1 element in heap
-			
 			swap(0, size - 1);
 			this.posInHeap[nodeIdAt[size - 1]] = -1;
 			this.nodeIdAt[size - 1] = -1;
@@ -138,6 +142,16 @@ public class MinHeap {
 	
 	int getSize() {
 		return size;
+	}
+
+	public void reset(){
+		for (int i = 0; i < size; i++) {
+			int nodeId = nodeIdAt[i];
+			nodeIdAt[i] = -1;
+			cost[i] = Integer.MAX_VALUE;
+			posInHeap[nodeId] = -1;
+		}
+		size = 0;
 	}
 
 }

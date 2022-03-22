@@ -14,7 +14,8 @@ public class Dijkstra {
 	private int target;
 	private int nrOfSettledNodes;
 	private boolean available = false;
-	
+	private MinHeap heap;
+
 	/**
 	 * computes the shortest path given the parameters
 	 * @param graph provided "city"
@@ -22,27 +23,29 @@ public class Dijkstra {
 	 * @param target targetnodeId
 	 *
 	 */
-	public Dijkstra(Graph graph, int s, int t){
+	public Dijkstra(Graph graph){
 		if(printInformation != 0){
 			System.out.println("computing dijkstra...");
 		}
 		nrOfSettledNodes = 0;
-		long sTime = System.currentTimeMillis();
 		this.dis = new int[graph.getNodeNr()];
 		this.parent = new int[graph.getNodeNr()];
 		this.graph = graph;
-		this.source = s;
-		this.target = t;
 		
 		for (int i = 0; i < graph.getNodeNr(); i++) {
 			dis[i] = Integer.MAX_VALUE;
 			parent[i] = -1; // no parent
 		}
 		
+		
+	}
+	public void computePath(int source, int target){
+		this.source = source;
+		this.target = target;
 		parent[source] = source;
 		dis[source] = 0;
 		
-		MinHeap heap = new MinHeap(graph.getNodeNr());
+		heap = new MinHeap(graph.getNodeNr());
 		
 		heap.add(source, 0);
 		
@@ -68,10 +71,15 @@ public class Dijkstra {
 			}
 			nrOfSettledNodes++;
 		}
-		long eTime = System.currentTimeMillis();
-		long time = eTime - sTime;
-		if(printInformation != 0){
-			System.out.println("Dijkstra Computation took ["+time+"] milli seconds");
+	}
+
+	public void reset(){
+		available = false;
+		nrOfSettledNodes = 0;
+		heap.reset();
+		for (int i = 0; i < graph.getNodeNr(); i++) {
+			dis[i] = Integer.MAX_VALUE;
+			parent[i] = -1;
 		}
 	}
 
@@ -151,7 +159,8 @@ public class Dijkstra {
 		
 		System.out.println("start: " + start);
 		System.out.println("target: " + target);
-		Dijkstra dij = new Dijkstra(g, start, target);
+		Dijkstra dij = new Dijkstra(g);
+		dij.computePath(start, target);
 		System.out.println("Cost: " + dij.dis[target]);
 		System.out.println("path available: "+dij.getPathAvailable());
 		

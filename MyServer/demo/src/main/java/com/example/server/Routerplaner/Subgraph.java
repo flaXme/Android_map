@@ -220,6 +220,10 @@ public class Subgraph {
         }
     }
 
+    int nodeInCorner(int nodeId){
+        return nodeInCornerCase[nodeId];
+    }
+
     int[] getEdge(int edgeId) {
         return Arrays.copyOfRange(edgeArray, edgeId * lengthOfEdgeElement, edgeId * lengthOfEdgeElement + lengthOfEdgeElement);
     }
@@ -337,5 +341,15 @@ public class Subgraph {
             }
         }
         return nearestNeighbour;
+    }
+
+    public static void main(String[] args) {
+        Subgraph subgraph = new Subgraph("./subgraph.txt");
+        int[] nodeAtEdge = subgraph.nodeInCornerCase;
+        for (int i = 0; i < nodeAtEdge.length; i++) {
+            if(nodeAtEdge[i] == 1){
+                System.out.println(i);
+            }
+        }
     }
 }

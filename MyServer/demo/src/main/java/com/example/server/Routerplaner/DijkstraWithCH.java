@@ -24,6 +24,8 @@ public class DijkstraWithCH {
 	private int costOfPath = 0;
 	private ArrayList<Integer> reachedNodes;
 	public static boolean[] settledNodes;
+	private MinHeap upwardHeap;
+	private MinHeap downwardHeap;
 	
 	/**
 	 * computes the shortest path given the parameters
@@ -32,20 +34,16 @@ public class DijkstraWithCH {
 	 * @param t targetnodeId
 	 *
 	 */
-	public DijkstraWithCH(GraphWithCH graph, int s, int t){
-		if(printInformation != 0){
-			System.out.println("computing dijkstra...");
-		}
+	public DijkstraWithCH(GraphWithCH graph){
 		nrOfSettledNodes= 0;
-		long sTime = System.currentTimeMillis();
 		this.upwardDis = new int[graph.getNodeNr()];
 		this.downwardDis = new int[graph.getNodeNr()];
 		this.upwardParent = new int[graph.getNodeNr()];
 		this.downwardParent = new int[graph.getNodeNr()];
 		this.graph = graph;
-		this.source = s;
-		this.target = t;
 		this.reachedNodes = new ArrayList<Integer>();
+		this.upwardHeap = new MinHeap(graph.getNodeNr());
+		this.downwardHeap = new MinHeap(graph.getNodeNr());
 		//settledNodes = new HashSet<>();
 		//settledNodes = new boolean[graph.getNodeNr()];
 
@@ -55,23 +53,30 @@ public class DijkstraWithCH {
 			upwardParent[i] = -1; // no parent
 			downwardParent[i] = -1;
 		}
-		
+	}
+
+	public void computePath(int source, int target){
+		boolean haltCondition = false;
+		boolean settledUpward = false;
+		boolean settledDownward = false;
+		if(graph.getNodeLevel(source) == graph.getMaxLevel() && graph.getNodeLevel(target) == graph.getMaxLevel()){
+			System.out.println("Both source and target are at the top level. No Path!");
+			haltCondition = true;
+		}
+		this.source = source;
+		this.target = target;
 		upwardParent[source] = source;
 		downwardParent[target] = target;
 		
 		upwardDis[source] = 0;
 		downwardDis[target] = 0;
 
-		MinHeap upwardHeap = new MinHeap(graph.getNodeNr());
-		MinHeap downwardHeap = new MinHeap(graph.getNodeNr());
 		//nodesReachedByUpward = new HashSet<Integer>();
 		//nodesReachedByDownward = new HashSet<Integer>();
 		upwardHeap.add(source, 0);
 		downwardHeap.add(target, 0);
 		
-		boolean haltCondition = false;
-		boolean settledUpward = false;
-		boolean settledDownward = false;
+		
 		int currentCostOfShortestPath = Integer.MAX_VALUE;
 		int[] globalMin;
 		while(!haltCondition) {
@@ -163,13 +168,25 @@ public class DijkstraWithCH {
 				}
 			}
 			nrOfSettledNodes++;
-			
 		}
-		long eTime = System.currentTimeMillis();
-		long time = eTime - sTime;
-		if(printInformation != 0){
-			System.out.println("Dijkstra Computation with CH took ["+time+"] milli seconds");
+
+	}
+
+	public void reset(){
+		for (int i : reachedNodes) {
+			upwardDis[i] = Integer.MAX_VALUE;
+			downwardDis[i] = Integer.MAX_VALUE;
+			upwardParent[i] = -1;
+			downwardParent[i] = -1;
+			settledNodes[i] = false;
 		}
+		nrOfSettledNodes = 0;
+		middleNodeInShortestPath = -1;
+		available = false;
+		upwardHeap.reset();
+		downwardHeap.reset();
+		reachedNodes.clear();
+		costOfPath = 0;
 		
 	}
     
@@ -188,14 +205,6 @@ public class DijkstraWithCH {
 
 
 	public int[] getShortestPathInNodeId() {
-		// System.out.println("Nodes reached by upward:");
-		// for (int i : nodesReachedByUpward) {
-		// 	System.out.println(i);
-		// }
-		// System.out.println("Node reached by downward:");
-		// for (int i : nodesReachedByDownward) {
-		// 	System.out.println(i);
-		// }
 		long sTime = System.currentTimeMillis();
 		//Set<Integer> intersection = new HashSet<Integer>(nodesReachedByUpward);
 		//intersection.retainAll(nodesReachedByDownward);
@@ -224,7 +233,6 @@ public class DijkstraWithCH {
 		if(printInformation != 0){
 			System.out.println("the meeting point is "+middleNodeInShortestPath+". The cost is "+shortestDis + ". Finding middle point takes ["+time+"]ms.");
 		}
-		sTime = System.currentTimeMillis();
 		//upwards:
 		int[] backwardPathUp = new int[graph.getNodeNr()];
 		int[] backwardPathDown = new int[graph.getNodeNr()];
@@ -277,10 +285,10 @@ public class DijkstraWithCH {
 			result[i] = backwardPathDown[j];
 			i++;
 		}
+		long startTime = System.currentTimeMillis();
 		result = expandShortcuts(result);
-		etime = System.currentTimeMillis();
-		time = etime -sTime;
-		System.out.println("concatinate path takes: ["+time+"]ms.");
+		long time2 = System.currentTimeMillis() - startTime;
+		System.out.println("expand path takes: " + time2 +"ms.");
 		//reset reachedNodes array
 		for (int nodeId : reachedNodes) {
 			settledNodes[nodeId] = false;
@@ -346,15 +354,16 @@ public class DijkstraWithCH {
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		
 		//int start = (int) (Math.random() * g.getNodeNr());	
-		int start = 0;
+		int source = 127353;
 		
 		//int target = (int) (Math.random() * g.getNodeNr());
-		int target = 1;
+		int target = 259745;
 		
-		System.out.println("start: " + start);
+		System.out.println("start: " + source);
 		System.out.println("target: " + target);
 		DijkstraWithCH.settledNodes = new boolean[g.getNodeNr()];
-		DijkstraWithCH dij = new DijkstraWithCH(g, start, target);
+		DijkstraWithCH dij = new DijkstraWithCH(g);
+		dij.computePath(source, target);
 		System.out.println("available: "+dij.getPathAvailable());
 		System.out.println(dij.getShortestPathInLonLat());
 		

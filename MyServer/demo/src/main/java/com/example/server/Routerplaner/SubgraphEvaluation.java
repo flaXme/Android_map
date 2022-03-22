@@ -6,9 +6,9 @@ import java.io.IOException;
 public class SubgraphEvaluation {
     public static void main(String[] args) {
         // GraphWithCH graphWithCH = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
-        // //random choose a subgraph with size 1/100 of the original.
-        // double latRange = (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph()) / 10;
-        // double longRange = (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph()) / 10;
+        // //random choose a subgraph with size 1/400 of the original.
+        // double latRange = (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph()) / 20;
+        // double longRange = (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph()) / 20;
         // double minLat =  graphWithCH.getMinLatOfGraph() + Math.random() * (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph());
         // double maxLat = minLat + latRange;
         // double minLong = graphWithCH.getMinLongOfGraph() + Math.random() * (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph());
@@ -23,11 +23,14 @@ public class SubgraphEvaluation {
         //     System.out.println("error in writing subgraph.");
         //     e.printStackTrace();
         // }
+
         Subgraph subgraph = new Subgraph("./subgraph.txt");
 
         int nrOfIteration = 1000;
         int nrOfValidQuery = 0;
         int equalCost = 0;
+        int nrOfPathWithNodeInCornerCase = 0;
+        int nrOfNoPathForCH = 0;
 
         for (int i = 0; i < nrOfIteration; i++) {
             System.out.println(i+1 + "-th test:");
@@ -52,8 +55,12 @@ public class SubgraphEvaluation {
 
             SubgraphDijCH  dijCH = new SubgraphDijCH(subgraph, source, target);
             if(!dijCH.getPathAvailable()){
+                nrOfNoPathForCH++;
                 System.out.println("No path found in dijk with CH!");
                 System.out.println("source: " + source + ", target: " + target);
+                if(dijCH.getPathWithNodeInCornerCase()){
+                    nrOfPathWithNodeInCornerCase++;
+                }
                 continue;
             }
             System.out.println("path available: " + dijCH.getPathAvailable());
@@ -64,6 +71,9 @@ public class SubgraphEvaluation {
             if(dij.getCost(target) == dijCH.getCostOfPath()){
                 equalCost++;
             }else{
+                if(dijCH.getPathWithNodeInCornerCase()){
+                    nrOfPathWithNodeInCornerCase++;
+                }
                 System.out.println("source is: " + source);
                 System.out.println("target is: " + target);
                 System.out.println("Cost with CH: " + dijCH.getCostOfPath());
@@ -75,5 +85,7 @@ public class SubgraphEvaluation {
         System.out.println("Here comes the results:");
         System.out.println(nrOfValidQuery + "/" + nrOfIteration + " queries are valid.");
         System.out.println("Both yields the path with same cost in : " + equalCost + "/" + nrOfValidQuery);
+        System.out.println("Dijkstra with CH has " + nrOfPathWithNodeInCornerCase + " paths, which has at least one edege across the rectagle.");
+        System.out.println("Dijkstra with CH yields no path in : " + nrOfNoPathForCH + " cases.");
     }
 }
