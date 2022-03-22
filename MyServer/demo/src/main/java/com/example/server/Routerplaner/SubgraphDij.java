@@ -1,6 +1,8 @@
 package com.example.server.Routerplaner;
 
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Stack;
 
 import com.example.server.Localisation.*;
@@ -14,6 +16,7 @@ public class SubgraphDij {
 	private int target;
 	private int nrOfSettledNodes;
 	private boolean available = false;
+	private MinHeap heap;
 	
 	/**
 	 * computes the shortest path given the parameters
@@ -22,28 +25,24 @@ public class SubgraphDij {
 	 * @param target targetnodeId
 	 *
 	 */
-	public SubgraphDij(Subgraph graph, int s, int t){
-		if(printInformation != 0){
-			System.out.println("computing dijkstra...");
-		}
+	public SubgraphDij(Subgraph graph){
 		nrOfSettledNodes = 0;
-		long sTime = System.currentTimeMillis();
 		this.dis = new int[graph.getNodeNr()];
 		this.parent = new int[graph.getNodeNr()];
 		this.graph = graph;
-		this.source = s;
-		this.target = t;
+		heap = new MinHeap(graph.getNodeNr());
 		
 		for (int i = 0; i < graph.getNodeNr(); i++) {
 			dis[i] = Integer.MAX_VALUE;
 			parent[i] = -1; // no parent
 		}
-		
+	}
+
+	public void computePath(int source, int target){
+		this.source = source;
+		this.target = target;
 		parent[source] = source;
 		dis[source] = 0;
-		
-		MinHeap heap = new MinHeap(graph.getNodeNr());
-		
 		heap.add(source, 0);
 		
 		while(heap.getSize() > 0) {
@@ -68,10 +67,15 @@ public class SubgraphDij {
 			}
 			nrOfSettledNodes++;
 		}
-		long eTime = System.currentTimeMillis();
-		long time = eTime - sTime;
-		if(printInformation != 0){
-			System.out.println("Dijkstra Computation took ["+time+"] milli seconds");
+	}
+
+	public void reset(){
+		available = false;
+		nrOfSettledNodes = 0;
+		heap.reset();
+		for (int i = 0; i < graph.getNodeNr(); i++) {
+			dis[i] = Integer.MAX_VALUE;
+			parent[i] = -1;
 		}
 	}
 
@@ -112,7 +116,54 @@ public class SubgraphDij {
 			tmp= parent[tmp];
 		}
 		backwardPath[i] = source;
-		return backwardPath;
+		int length = i + 1;
+		int[] forwardPath = new int[length];
+		int j = 0;
+		while(i >=0){
+			forwardPath[j] = backwardPath[i];
+			j++;
+			i--;
+		}
+		forwardPath = expandShortcuts(forwardPath);
+		return forwardPath;
+	}
+
+	private int[] expandShortcuts(int[] path){
+		int[] resultWithoutShortcut;
+		boolean shortcutExpaned = true;
+		LinkedList<Integer> listWithoutShortcut = new LinkedList<>();
+		for(int i = 0; i < path.length; i++){
+			listWithoutShortcut.add(path[i]);
+		}
+		while(shortcutExpaned){
+			shortcutExpaned = false;
+			ListIterator<Integer> iterator = listWithoutShortcut.listIterator();
+			int currentNode = -1;
+			int nextNode = iterator.next();
+			while(iterator.hasNext()){
+				currentNode = nextNode;
+				nextNode = iterator.next();
+				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(currentNode);
+				int startIndex = outgoingEdgesIndex[0];
+				int endIndex = outgoingEdgesIndex[1];
+				int[] edgeArray = graph.getEdgeArray();
+				for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
+					if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
+						shortcutExpaned = true;
+						iterator.previous();
+						iterator.add(graph.getEdge(edgeArray[j+3])[1]);
+						nextNode = graph.getEdge(edgeArray[j+3])[1];
+						break;//no second shortcut between two nodes.
+					}
+				}
+			}
+		}
+		resultWithoutShortcut = new int[listWithoutShortcut.size()];
+		ListIterator<Integer> iter = listWithoutShortcut.listIterator();
+		while(iter.hasNext()){
+			resultWithoutShortcut[iter.nextIndex()] = iter.next();
+		}
+		return resultWithoutShortcut;
 	}
 	
 	public String getShortestPathInLonLat(){

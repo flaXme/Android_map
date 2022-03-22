@@ -26,6 +26,7 @@ public class Subgraph {
     private int nrOfDownwardEdge;
     private int[] oldNrOfOutgoingEdeges;
     private int[] nodeInCornerCase;
+    private int maxLevel = -1;
 
     /**
      * Constructor of the class Graph
@@ -82,10 +83,13 @@ public class Subgraph {
                 longitude[i] = Double.valueOf(tempString[3]);//store longitude of node i
                 oldNrOfOutgoingEdeges[i] = Integer.valueOf(tempString[4]);// store whether the node is has outgoing edges across the bounding box
                 nodeLevel[i] = Integer.valueOf(tempString[5]);// store node level of node i
+                if(nodeLevel[i] > maxLevel){
+					maxLevel = nodeLevel[i];
+				}
                 upwardNodeArray[i] = -1;
                 downwardNodeArray[i] = -1;
                 nodeArray[i] = -1;
-
+                
             }
             //count number of up and downward edge:
             int index = 0;
@@ -231,6 +235,14 @@ public class Subgraph {
     int getEdgeId(int startIndex) {
         return startIndex / lengthOfEdgeElement;
     }
+
+    public int getNodeLevel(int nodeId){
+		return nodeLevel[nodeId];
+	}
+
+    public int getMaxLevel(){
+		return maxLevel;
+	}
 
     int[] getUpwardEdgeArray() {
         return upwardEdgeArray;

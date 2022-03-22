@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Set;
 
 public class DijkstraWithCH {
@@ -303,36 +304,37 @@ public class DijkstraWithCH {
 		for(int i = 0; i < path.length; i++){
 			listWithoutShortcut.add(path[i]);
 		}
-		// System.out.println("node list of path:");
-		// for (Integer integer : listWithoutShortcut) {
-		// 	System.out.println(integer);
-		// }
 		while(shortcutExpaned){
 			shortcutExpaned = false;
-			for (int i = 0; i < listWithoutShortcut.size() - 1; i++) {
-				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(listWithoutShortcut.get(i).intValue());
+			ListIterator<Integer> iterator = listWithoutShortcut.listIterator();
+			int currentNode = -1;
+			int nextNode = iterator.next();
+			while(iterator.hasNext()){
+				currentNode = nextNode;
+				nextNode = iterator.next();
+				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(currentNode);
 				int startIndex = outgoingEdgesIndex[0];
 				int endIndex = outgoingEdgesIndex[1];
 				int[] edgeArray = graph.getEdgeArray();
-				//System.out.println("erwartet: start:" + listWithoutShortcut.get(i)+"; end: "+listWithoutShortcut.get(i+1));
 				for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
-					//System.out.println("start: "+ edgeArray[j] + " end: " + edgeArray[j+1] + " first subedge: "+edgeArray[j+3]);
-					if(edgeArray[j+1] == listWithoutShortcut.get(i+1).intValue() && edgeArray[j+3] != -1){
+					if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
 						shortcutExpaned = true;
-						//System.out.println("shortcut expanded.");
-						listWithoutShortcut.add(i+1, graph.getEdge(edgeArray[j+3])[1]);
+						iterator.previous();
+						iterator.add(graph.getEdge(edgeArray[j+3])[1]);
+						nextNode = graph.getEdge(edgeArray[j+3])[1];
 						break;//no second shortcut between two nodes.
 					}
 				}
 			}
 		}
 		resultWithoutShortcut = new int[listWithoutShortcut.size()];
-		for (int i = 0; i < resultWithoutShortcut.length; i++) {
-			resultWithoutShortcut[i] = listWithoutShortcut.get(i).intValue();
+		ListIterator<Integer> iter = listWithoutShortcut.listIterator();
+		while(iter.hasNext()){
+			resultWithoutShortcut[iter.nextIndex()] = iter.next();
 		}
 		return resultWithoutShortcut;
 	}
-	
+
 	public String getShortestPathInLonLat(){
 		if(available){
 			int[] path = getShortestPathInNodeId();

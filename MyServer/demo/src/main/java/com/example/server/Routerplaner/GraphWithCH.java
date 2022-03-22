@@ -434,7 +434,8 @@ public class GraphWithCH {
 	 * @return the String representation of the subgraph
 	 */
 	public String calculateSubgraph(final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
-		String subgraphString = "";
+		StringBuilder subgraph = new StringBuilder(Integer.MAX_VALUE - 2);
+		subgraph.append("");
 		System.out.print("calculating subgraph:");
 		// check all nodes whether they are part of the subgraph:
 		int newNodeId = 0;//new nodeId of subgraph
@@ -447,7 +448,7 @@ public class GraphWithCH {
 				//check whether the node has outgoing edges that goes across the bounding box
 				int oldNrOfOutgoingEdges = nrOfOutgoingEdges[i];//the number of original outgoing edges
 				//node information format: oldId, newId, latitude, longitude, cornerCase, level, separate with one space
-				subgraphString = subgraphString + Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + " " + Integer.toString(oldNrOfOutgoingEdges) + " " + Integer.toString(nodeLevel[i]) + "\n";
+				subgraph.append(Integer.toString(i) + " " + Integer.toString(newNodeId) + " " + Double.toString(getLatitude(i)) + " " + Double.toString(getLongitude(i)) + " " + Integer.toString(oldNrOfOutgoingEdges) + " " + Integer.toString(nodeLevel[i]) + "\n");
 				//save the new id of nodes in subgraph.
 				newIdOfNode.put(i, newNodeId);
 				//next new id of the node in subgraph, will be invalid(off by +1) after the last for-iteration
@@ -487,18 +488,13 @@ public class GraphWithCH {
 				secondSubedegeId = -1;
 			}
 			//edge information format: newId of startNode, newId of endNode, cost. id1, id2 separate with one space
-			subgraphString = subgraphString + Integer.toString(newIdOfNode.get(startNode)) + " " + Integer.toString(newIdOfNode.get(endNode)) + " " + Integer.toString(cost) + " " + Integer.toString(firstSubEdgeId) + " " + Integer.toString(secondSubedegeId) + "\n";
+			subgraph.append(Integer.toString(newIdOfNode.get(startNode)) + " " + Integer.toString(newIdOfNode.get(endNode)) + " " + Integer.toString(cost) + " " + Integer.toString(firstSubEdgeId) + " " + Integer.toString(secondSubedegeId) + "\n");
 		}
 
 		//add number of nodes and number of edges at begin of the string.
-		subgraphString = "#\n#This is the subgraph. \n\n" + Integer.toString(newNodeId)  + "\n" + Integer.toString(edgeCounter) + "\n" + subgraphString;
+		subgraph.insert(0, "#\n#This is the subgraph. \n\n" + Integer.toString(newNodeId)  + "\n" + Integer.toString(edgeCounter) + "\n");
 		System.out.println("Computing subgraph finished!");
-		return subgraphString;
-	}
-	public static void main(String[] args) {
-		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
-		String subgraph = g.calculateSubgraph(48.744679999999995, 48.75184598260022, 9.100138609509344, 9.112503723550901);
-		//System.out.println(subgraph);
+		return subgraph.toString();
 	}
 }
 

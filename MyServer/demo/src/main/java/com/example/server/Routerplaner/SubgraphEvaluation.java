@@ -16,7 +16,7 @@ public class SubgraphEvaluation {
         // String subgraphString = graphWithCH.calculateSubgraph(minLat, maxLat, minLong, maxLong);
         // //write subgraph data in a local file
         // try {
-        //     FileWriter writer = new FileWriter("subgraph.txt");
+        //     FileWriter writer = new FileWriter("subgraph1.txt");
         //     writer.write(subgraphString);
         //     writer.close();
         // } catch (IOException e) {
@@ -24,7 +24,7 @@ public class SubgraphEvaluation {
         //     e.printStackTrace();
         // }
 
-        Subgraph subgraph = new Subgraph("./subgraph.txt");
+        Subgraph subgraph = new Subgraph("./subgraph1.txt");
 
         int nrOfIteration = 1000;
         int nrOfValidQuery = 0;
@@ -43,17 +43,20 @@ public class SubgraphEvaluation {
             
             
 
-            SubgraphDij dij = new SubgraphDij(subgraph, source, target);
+            SubgraphDij dij = new SubgraphDij(subgraph);
+            dij.computePath(source, target);
             if(!dij.getPathAvailable()){
                 System.out.println("source is: " + source);
                 System.out.println("target is: " + target);
                 System.out.println("no path available!");
+                dij.reset();
                 continue;
             }
             dij.getShortestPathInLonLat();
             nrOfValidQuery++;
 
-            SubgraphDijCH  dijCH = new SubgraphDijCH(subgraph, source, target);
+            SubgraphDijCH  dijCH = new SubgraphDijCH(subgraph);
+            dijCH.computePath(source, target);
             if(!dijCH.getPathAvailable()){
                 nrOfNoPathForCH++;
                 System.out.println("No path found in dijk with CH!");
@@ -61,6 +64,7 @@ public class SubgraphEvaluation {
                 if(dijCH.getPathWithNodeInCornerCase()){
                     nrOfPathWithNodeInCornerCase++;
                 }
+                dijCH.reset();
                 continue;
             }
             System.out.println("path available: " + dijCH.getPathAvailable());
@@ -79,6 +83,10 @@ public class SubgraphEvaluation {
                 System.out.println("Cost with CH: " + dijCH.getCostOfPath());
                 System.out.println("Cost without CH: " + dij.getCost(target));
             }
+
+            //reset:
+            dij.reset();
+            dijCH.reset();
 
         }
         System.out.println("-----------------------------------------------------------------------------");

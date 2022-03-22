@@ -1,6 +1,8 @@
 package com.example.server.Routerplaner;
 
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Stack;
 
 import com.example.server.Localisation.*;
@@ -31,6 +33,7 @@ public class Dijkstra {
 		this.dis = new int[graph.getNodeNr()];
 		this.parent = new int[graph.getNodeNr()];
 		this.graph = graph;
+		heap = new MinHeap(graph.getNodeNr());
 		
 		for (int i = 0; i < graph.getNodeNr(); i++) {
 			dis[i] = Integer.MAX_VALUE;
@@ -44,11 +47,7 @@ public class Dijkstra {
 		this.target = target;
 		parent[source] = source;
 		dis[source] = 0;
-		
-		heap = new MinHeap(graph.getNodeNr());
-		
 		heap.add(source, 0);
-		
 		while(heap.getSize() > 0) {
 			int[] min = heap.remove();
 			int[] out = graph.getOutgingEdgesArray(min[0]);
@@ -107,7 +106,7 @@ public class Dijkstra {
 		return sum;
 	}
 
-	public int[] getShortestPathTo() {
+	public int[] getShortestPath() {
 		int[] backwardPath = new int[graph.getNodeNr()];
 		for(int i = 0; i < backwardPath.length; i++) {
 			backwardPath[i] = -1;
@@ -120,20 +119,67 @@ public class Dijkstra {
 			tmp= parent[tmp];
 		}
 		backwardPath[i] = source;
-		return backwardPath;
+		int length = i + 1;
+		int[] forwardPath = new int[length];
+		int j = 0;
+		while(i >=0){
+			forwardPath[j] = backwardPath[i];
+			j++;
+			i--;
+		}
+		forwardPath = expandShortcuts(forwardPath);
+		return forwardPath;
+	}
+
+	private int[] expandShortcuts(int[] path){
+		int[] resultWithoutShortcut;
+		boolean shortcutExpaned = true;
+		LinkedList<Integer> listWithoutShortcut = new LinkedList<>();
+		for(int i = 0; i < path.length; i++){
+			listWithoutShortcut.add(path[i]);
+		}
+		while(shortcutExpaned){
+			shortcutExpaned = false;
+			ListIterator<Integer> iterator = listWithoutShortcut.listIterator();
+			int currentNode = -1;
+			int nextNode = iterator.next();
+			while(iterator.hasNext()){
+				currentNode = nextNode;
+				nextNode = iterator.next();
+				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(currentNode);
+				int startIndex = outgoingEdgesIndex[0];
+				int endIndex = outgoingEdgesIndex[1];
+				int[] edgeArray = graph.getEdgeArray();
+				for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
+					if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
+						shortcutExpaned = true;
+						iterator.previous();
+						iterator.add(graph.getEdge(edgeArray[j+3])[1]);
+						nextNode = graph.getEdge(edgeArray[j+3])[1];
+						break;//no second shortcut between two nodes.
+					}
+				}
+			}
+		}
+		resultWithoutShortcut = new int[listWithoutShortcut.size()];
+		ListIterator<Integer> iter = listWithoutShortcut.listIterator();
+		while(iter.hasNext()){
+			resultWithoutShortcut[iter.nextIndex()] = iter.next();
+		}
+		return resultWithoutShortcut;
 	}
 	
 	public String getShortestPathInLonLat(){
 		if(available){
-			int[] path = getShortestPathTo();
-			int pathLength = 0;
-			for(int i = 0; i < path.length; i++) {
-				if(path[i] != -1){
-					pathLength++;
-				}else{
-					break;
-				}
-			}
+			int[] path = getShortestPath();
+			int pathLength = path.length;
+			// for(int i = 0; i < path.length; i++) {
+			// 	if(path[i] != -1){
+			// 		pathLength++;
+			// 	}else{
+			// 		break;
+			// 	}
+			// }
 			double[][] shortestPathInLonLat = new double[pathLength][2];
 			for(int i = 0; i < pathLength; i++) {
 				shortestPathInLonLat[i][0] = graph.getLongitude(path[i]);

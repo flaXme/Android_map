@@ -1,8 +1,10 @@
 package com.example.server.Routerplaner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Set;
 
 public class SubgraphDijCH {
@@ -11,16 +13,17 @@ public class SubgraphDijCH {
     private int[] upwardParent;
     private int[] downwardParent;
     private Subgraph graph;
-    private final int source;
-    private final int target;
+    private int source;
+    private int target;
     private int nrOfSettledNodes;
     private boolean available = false;
-    private Set<Integer> settledNodes;
-    private Set<Integer> nodesReachedByUpward;
-    private Set<Integer> nodesReachedByDownward;
     private int middleNodeInShortestPath = -1;
     private int costOfPath = 0;
     private boolean pathWithNodeInCornerCase = false;
+    private ArrayList<Integer> reachedNodes;
+	public static boolean[] settledNodes;
+	private MinHeap upwardHeap;
+	private MinHeap downwardHeap;
 
     /**
      * computes the shortest path given the parameters
@@ -29,18 +32,18 @@ public class SubgraphDijCH {
      * @param s     startnodeId
      * @param t     targetnodeId
      */
-    public SubgraphDijCH(Subgraph graph, int s, int t) {
-        System.out.println("computing dijkstra...");
+    public SubgraphDijCH(Subgraph graph) {
         nrOfSettledNodes = 0;
-        long sTime = System.currentTimeMillis();
         this.upwardDis = new int[graph.getNodeNr()];
         this.downwardDis = new int[graph.getNodeNr()];
         this.upwardParent = new int[graph.getNodeNr()];
         this.downwardParent = new int[graph.getNodeNr()];
         this.graph = graph;
-        this.source = s;
-        this.target = t;
-        settledNodes = new HashSet<>();
+        this.reachedNodes = new ArrayList<Integer>();
+        this.upwardHeap = new MinHeap(graph.getNodeNr());
+		this.downwardHeap = new MinHeap(graph.getNodeNr());
+        SubgraphDijCH.settledNodes = new boolean[graph.getNodeNr()];
+
 
         for (int i = 0; i < graph.getNodeNr(); i++) {
             upwardDis[i] = Integer.MAX_VALUE;
@@ -48,23 +51,28 @@ public class SubgraphDijCH {
             upwardParent[i] = -1; // no parent
             downwardParent[i] = -1;
         }
+    }
 
+    public void computePath(int source, int target){
+        boolean haltCondition = false;
+		boolean settledUpward = false;
+		boolean settledDownward = false;
+		if(graph.getNodeLevel(source) == graph.getMaxLevel() && graph.getNodeLevel(target) == graph.getMaxLevel()){
+			System.out.println("Both source and target are at the top level. No Path!");
+			haltCondition = true;
+		}
+        this.source = source;
+		this.target = target;
         upwardParent[source] = source;
         downwardParent[target] = target;
 
         upwardDis[source] = 0;
         downwardDis[target] = 0;
 
-        MinHeap upwardHeap = new MinHeap(graph.getNodeNr());
-        MinHeap downwardHeap = new MinHeap(graph.getNodeNr());
-        nodesReachedByUpward = new HashSet<Integer>();
-        nodesReachedByDownward = new HashSet<Integer>();
+        
         upwardHeap.add(source, 0);
         downwardHeap.add(target, 0);
 
-        boolean haltCondition = false;
-        boolean settledUpward = false;
-        boolean settledDownward = false;
         int currentCostOfShortestPath = Integer.MAX_VALUE;
         int[] globalMin;
         while (!haltCondition) {
@@ -80,13 +88,15 @@ public class SubgraphDijCH {
                 globalMin = downwardHeap.remove();
                 settledDownward = true;
             }
-            if(settledNodes.contains(globalMin[0])){
+            //if(settledNodes.contains(globalMin[0])){
+            if(settledNodes[globalMin[0]] == true){
                 int distance = upwardDis[globalMin[0]] + downwardDis[globalMin[0]];
                 if(distance < currentCostOfShortestPath){
                     currentCostOfShortestPath = distance;
                 }
             }else{
-                settledNodes.add(globalMin[0]);
+                //settledNodes.add(globalMin[0]);
+                settledNodes[globalMin[0]] = true;
             }
             if((settledUpward && upwardDis[globalMin[0]] > currentCostOfShortestPath) || (settledDownward && downwardDis[globalMin[0]] > currentCostOfShortestPath)){
                 available = true;
@@ -111,7 +121,8 @@ public class SubgraphDijCH {
                     for (int i = startIndex; i < endIndex; i += graph.getLengthOfEdgeElement()) {
                         if (upwardDis[edgeArray[i]] + edgeArray[i + 2] < upwardDis[edgeArray[i + 1]]) {
                             upwardDis[edgeArray[i + 1]] = upwardDis[edgeArray[i]] + edgeArray[i + 2];
-                            nodesReachedByUpward.add(edgeArray[i + 1]);
+                            //nodesReachedByUpward.add(edgeArray[i + 1]);
+                            reachedNodes.add(edgeArray[i+1]);
                             if(graph.nodeInCorner(edgeArray[i + 1]) == 1){
                                 pathWithNodeInCornerCase = true;
                             }
@@ -142,7 +153,8 @@ public class SubgraphDijCH {
                     for (int i = startIndex; i < endIndex; i += graph.getLengthOfEdgeElement()) {
                         if (downwardDis[edgeArray[i]] + edgeArray[i + 2] < downwardDis[edgeArray[i + 1]]) {
                             downwardDis[edgeArray[i + 1]] = downwardDis[edgeArray[i]] + edgeArray[i + 2];
-                            nodesReachedByDownward.add(edgeArray[i + 1]);
+                            //nodesReachedByDownward.add(edgeArray[i + 1]);
+                            reachedNodes.add(edgeArray[i+1]);
                             if(graph.nodeInCorner(edgeArray[i + 1]) == 1){
                                 pathWithNodeInCornerCase = true;
                             }
@@ -158,15 +170,26 @@ public class SubgraphDijCH {
                 }
             }
             nrOfSettledNodes++;
-
         }
-
-        long eTime = System.currentTimeMillis();
-        long time = eTime - sTime;
-        System.out.println("Dijkstra Computation with CH took [" + time + "] milli seconds");
-
     }
 
+    public void reset(){
+		for (int i : reachedNodes) {
+			upwardDis[i] = Integer.MAX_VALUE;
+			downwardDis[i] = Integer.MAX_VALUE;
+			upwardParent[i] = -1;
+			downwardParent[i] = -1;
+			settledNodes[i] = false;
+		}
+		nrOfSettledNodes = 0;
+		middleNodeInShortestPath = -1;
+		available = false;
+		upwardHeap.reset();
+		downwardHeap.reset();
+		reachedNodes.clear();
+		costOfPath = 0;
+		
+	}
 
     public boolean getPathAvailable() {
         return available;
@@ -185,21 +208,19 @@ public class SubgraphDijCH {
     }
 
     public int[] getShortestPathInNodeId() {
-        Set<Integer> intersection = new HashSet<Integer>(nodesReachedByUpward);
-        intersection.retainAll(nodesReachedByDownward);
-        if(intersection.isEmpty()){
-            return new int[]{source, target};
-        }
         int shortestDis = Integer.MAX_VALUE;
-        for (Integer nodeId : intersection) {
-            int completeDis = upwardDis[nodeId] + downwardDis[nodeId];
-            if (completeDis < shortestDis) {
-                shortestDis = completeDis;
-                middleNodeInShortestPath = nodeId;
-            }
-        }
-        System.out.println("the meeting point is " + middleNodeInShortestPath + ". The cost is " + shortestDis);
+        for (int nodeId : reachedNodes) {
+			if(upwardDis[nodeId] == Integer.MAX_VALUE || downwardDis[nodeId] == Integer.MAX_VALUE){
+				continue;
+			}
+			int completeDis = upwardDis[nodeId] + downwardDis[nodeId];
+			if(completeDis < shortestDis){
+				shortestDis = completeDis;
+				middleNodeInShortestPath = nodeId;
+			}
+		}
         costOfPath = shortestDis;
+        System.out.println("the meeting point is " + middleNodeInShortestPath + ". The cost is " + shortestDis);
         //upwards:
         int[] backwardPathUp = new int[graph.getNodeNr()];
         int[] backwardPathDown = new int[graph.getNodeNr()];
@@ -256,42 +277,43 @@ public class SubgraphDijCH {
         return result;
     }
 
-    private int[] expandShortcuts(int[] path) {
-        int[] resultWithoutShortcut;
-        boolean shortcutExpaned = true;
-        LinkedList<Integer> listWithoutShortcut = new LinkedList<>();
-        for (int i = 0; i < path.length; i++) {
-            listWithoutShortcut.add(path[i]);
-        }
-        // System.out.println("node list of path:");
-        // for (Integer integer : listWithoutShortcut) {
-        // 	System.out.println(integer);
-        // }
-        while (shortcutExpaned) {
-            shortcutExpaned = false;
-            for (int i = 0; i < listWithoutShortcut.size() - 1; i++) {
-                int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(listWithoutShortcut.get(i).intValue());
-                int startIndex = outgoingEdgesIndex[0];
-                int endIndex = outgoingEdgesIndex[1];
-                int[] edgeArray = graph.getEdgeArray();
-                //System.out.println("erwartet: start:" + listWithoutShortcut.get(i)+"; end: "+listWithoutShortcut.get(i+1));
-                for (int j = startIndex; j < endIndex; j += graph.getLengthOfEdgeElement()) {
-                    //System.out.println("start: "+ edgeArray[j] + " end: " + edgeArray[j+1] + " first subedge: "+edgeArray[j+3]);
-                    if (edgeArray[j + 1] == listWithoutShortcut.get(i + 1).intValue() && edgeArray[j + 3] != -1) {
-                        shortcutExpaned = true;
-                        //System.out.println("shortcut expanded.");
-                        listWithoutShortcut.add(i + 1, graph.getEdge(edgeArray[j + 3])[1]);
-                        break;//no second shortcut between two nodes.
-                    }
-                }
-            }
-        }
-        resultWithoutShortcut = new int[listWithoutShortcut.size()];
-        for (int i = 0; i < resultWithoutShortcut.length; i++) {
-            resultWithoutShortcut[i] = listWithoutShortcut.get(i).intValue();
-        }
-        return resultWithoutShortcut;
-    }
+    private int[] expandShortcuts(int[] path){
+		int[] resultWithoutShortcut;
+		boolean shortcutExpaned = true;
+		LinkedList<Integer> listWithoutShortcut = new LinkedList<>();
+		for(int i = 0; i < path.length; i++){
+			listWithoutShortcut.add(path[i]);
+		}
+		while(shortcutExpaned){
+			shortcutExpaned = false;
+			ListIterator<Integer> iterator = listWithoutShortcut.listIterator();
+			int currentNode = -1;
+			int nextNode = iterator.next();
+			while(iterator.hasNext()){
+				currentNode = nextNode;
+				nextNode = iterator.next();
+				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(currentNode);
+				int startIndex = outgoingEdgesIndex[0];
+				int endIndex = outgoingEdgesIndex[1];
+				int[] edgeArray = graph.getEdgeArray();
+				for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
+					if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
+						shortcutExpaned = true;
+						iterator.previous();
+						iterator.add(graph.getEdge(edgeArray[j+3])[1]);
+						nextNode = graph.getEdge(edgeArray[j+3])[1];
+						break;//no second shortcut between two nodes.
+					}
+				}
+			}
+		}
+		resultWithoutShortcut = new int[listWithoutShortcut.size()];
+		ListIterator<Integer> iter = listWithoutShortcut.listIterator();
+		while(iter.hasNext()){
+			resultWithoutShortcut[iter.nextIndex()] = iter.next();
+		}
+		return resultWithoutShortcut;
+	}
 
     public String getShortestPathInLonLat() {
         if(available) {
