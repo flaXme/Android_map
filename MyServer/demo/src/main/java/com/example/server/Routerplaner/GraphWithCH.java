@@ -434,7 +434,7 @@ public class GraphWithCH {
 	 * @return the String representation of the subgraph
 	 */
 	public String calculateSubgraph(final double minLatitude, final double maxLatitude, final double minLongitude, final double maxLongitude){
-		StringBuilder subgraph = new StringBuilder(Integer.MAX_VALUE - 2);
+		StringBuilder subgraph = new StringBuilder(1);
 		subgraph.append("");
 		System.out.print("calculating subgraph:");
 		// check all nodes whether they are part of the subgraph:

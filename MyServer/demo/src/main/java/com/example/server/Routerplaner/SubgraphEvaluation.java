@@ -18,7 +18,7 @@ public class SubgraphEvaluation {
         downloadGraphTime = System.currentTimeMillis() - downloadGraphTime;
         //write subgraph data in a local file
         try {
-            FileWriter writer = new FileWriter("subgraph10.txt");
+            FileWriter writer = new FileWriter("subgraph11.txt");
             writer.write(subgraphString);
             writer.close();
         } catch (IOException e) {
@@ -26,7 +26,7 @@ public class SubgraphEvaluation {
             e.printStackTrace();
         }
 
-        Subgraph subgraph = new Subgraph("./subgraph10.txt");
+        Subgraph subgraph = new Subgraph("./subgraph11.txt");
 
         int nrOfIteration = 1000;
         int nrOfValidQuery = 0;
