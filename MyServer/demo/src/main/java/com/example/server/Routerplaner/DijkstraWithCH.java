@@ -313,16 +313,18 @@ public class DijkstraWithCH {
 				currentNode = nextNode;
 				nextNode = iterator.next();
 				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(currentNode);
-				int startIndex = outgoingEdgesIndex[0];
-				int endIndex = outgoingEdgesIndex[1];
-				int[] edgeArray = graph.getEdgeArray();
-				for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
-					if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
-						shortcutExpaned = true;
-						iterator.previous();
-						iterator.add(graph.getEdge(edgeArray[j+3])[1]);
-						nextNode = graph.getEdge(edgeArray[j+3])[1];
-						break;//no second shortcut between two nodes.
+				if(outgoingEdgesIndex != null){
+					int startIndex = outgoingEdgesIndex[0];
+					int endIndex = outgoingEdgesIndex[1];
+					int[] edgeArray = graph.getEdgeArray();
+					for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
+						if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
+							shortcutExpaned = true;
+							iterator.previous();
+							iterator.add(graph.getEdge(edgeArray[j+3])[1]);
+							nextNode = graph.getEdge(edgeArray[j+3])[1];
+							break;//no second shortcut between two nodes.
+						}
 					}
 				}
 			}
@@ -352,7 +354,7 @@ public class DijkstraWithCH {
 	}
 
 	public static void main(String[] args) {
-		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
+		GraphWithCH g = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor_Arbeit/CH/ch_germany.txt");
 		//Quadtree q = new Quadtree("/Users/xinpang/Desktop/Studium/7. Semester/Bachelor Arbeit/Server/src/germany.txt");
 		
 		//int start = (int) (Math.random() * g.getNodeNr());	

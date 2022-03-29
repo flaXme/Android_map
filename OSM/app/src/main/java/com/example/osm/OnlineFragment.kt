@@ -3,7 +3,6 @@ package com.example.osm
 import android.app.DownloadManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Paint
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
@@ -328,7 +327,6 @@ class OnlineFragment : Fragment() {
     private fun download(minLat:Double, maxLat:Double, minLong:Double, maxLong:Double){
         //download graph data:
         val dataUrl = "http://192.168.178.21:8000/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
-        //val dataUrl = "http://$ip:8081/subgraph?minLat=$minLat&maxLat=$maxLat&minLong=$minLong&maxLong=$maxLong"
         val dataRequest = DownloadManager.Request(Uri.parse(dataUrl))
             .setTitle("graphDataDownloadRequest")
             .setDescription("Downloading graph data")
@@ -337,44 +335,10 @@ class OnlineFragment : Fragment() {
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"osm/data/graphData.txt" )
         val dm = activity?.getSystemService(AppCompatActivity.DOWNLOAD_SERVICE) as DownloadManager
         dm.enqueue(dataRequest)
-
-        //download tile data with DownloadManager:
-//        for (zoomLevel in 3..18){
-//            val minTileCoor = getXYTile(minLat,minLong,zoomLevel)
-//            val minX = minTileCoor.first
-//            val maxY = minTileCoor.second
-//            val maxTileCoor = getXYTile(maxLat,maxLong,zoomLevel)
-//            val maxX = maxTileCoor.first
-//            val minY = maxTileCoor.second
-//            for (x in minX..maxX){
-//                for (y in minY..maxY){
-//                    val url = "https://tiles.fmi.uni-stuttgart.de/$zoomLevel/$x/$y.png"
-//                    val tileRequest = DownloadManager.Request(Uri.parse(url))
-//                        .setTitle("graphTileDownloadRequest")
-//                        .setDescription("Downloading graph tiles.")
-//                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-//                        .setAllowedOverMetered(true)
-//                        .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,"osm/tiles/$zoomLevel/$x/$y.png" )
-//                    dm.enqueue(tileRequest)
-//                }
-//            }
-//
-//        }
-
-        //download tiles with cacheManager
-        //setHasOptionsMenu(false)
         val cm = CacheManager(map)
         cm.downloadAreaAsync(activity,downloadArea,3,19)
     }
 
-    /**
-     * @param start: id of the start point in the subgraph
-     * @param end: id of tne end point in the subgraph
-     */
-    private fun computePath(start: Int, end:Int){
-        var dij = Dijkstra(subGraph,start,end)
-        drawLineWithStringOfCoordinates(dij.shortestPathInLonLat)
-    }
 
 
 
@@ -382,67 +346,11 @@ class OnlineFragment : Fragment() {
      * display the path on the map, given a string of path in lat, long
      * string format:"[[firstLat,_firstLong],_[secondLat,_secondLong],_...,_[lastLat,_lastLong]]" space represented undersocre because easy of read.
      */
-    private fun drawLineWithStringOfCoordinates(stringPath: String){
-        //get rid of the first and last 2 characters
-        val newStringPath = stringPath.drop(2).dropLast(2)
-        //now the string looks like this:"firstLat,_firstLong],_[secondLat,_secondLong],_...,_[lastLat,_lastLong"
-        val path = Polyline()
-        //first split:
-        val latLongPath: List<String> = newStringPath.split("], [")
-        //now the string element in the list looks like this: firstLat,_firstLong
-        val pointList:MutableList<GeoPoint> = mutableListOf()
-        for (coordinates in latLongPath){
-            val latLong:List<String> = coordinates.split(", ")
-            //Lat and Long are given to GeoPoint constructor in reverse order because GeoPoint expects first argument to be longitude and second argument to be latitude
-            pointList.add(GeoPoint(latLong[1].toDouble(),latLong[0].toDouble()))
-        }
-        if (pointList.size > 2) {
-            path.setPoints(pointList)
-            //polyline refinement, no gaps between two subline.
-            path.outlinePaint.strokeJoin = Paint.Join.ROUND
-            path.outlinePaint.strokeCap = Paint.Cap.ROUND
-            map.overlays.add(path)
-            map.controller.setCenter(path.actualPoints.get(0))
-            map.invalidate()
-        }else{
-            Toast.makeText(activity, "No path Available!", Toast.LENGTH_SHORT).show()
-        }
-        path.setOnClickListener(Polyline.OnClickListener{ path, map, _ ->
-            map.overlays.remove(path)
-        })
-
-    }
 
 
-    /**
-     * Given a point in lat lang and zoom level, return the tile coordinate which contains the given point, w.r.t. the zoom level.
-     *
-     * @param lat: latitude of a specific point
-     * @param lon: longitude of a specific point
-     * @param zoom: zoom level of the tiles
-     *
-     * @return Pair<Int,Int>: tile coordinates x and y.
-     */
-    fun getXYTile(lat : Double, lon: Double, zoom : Int) : Pair<Int, Int> {
-        val latRad = Math.toRadians(lat)
-        var xtile = floor( (lon + 180) / 360 * (1 shl zoom) ).toInt()
-        var ytile = floor( (1.0 - asinh(tan(latRad)) / PI) / 2 * (1 shl zoom) ).toInt()
 
-        if (xtile < 0) {
-            xtile = 0
-        }
-        if (xtile >= (1 shl zoom)) {
-            xtile= (1 shl zoom) - 1
-        }
-        if (ytile < 0) {
-            ytile = 0
-        }
-        if (ytile >= (1 shl zoom)) {
-            ytile = (1 shl zoom) - 1
-        }
 
-        return Pair(xtile, ytile)
-    }
+
 
     /**
      * check whether is internet connection availiable.

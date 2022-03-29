@@ -147,16 +147,18 @@ public class Dijkstra {
 				currentNode = nextNode;
 				nextNode = iterator.next();
 				int[] outgoingEdgesIndex = graph.getOutgoingEdgesArrayIndex(currentNode);
-				int startIndex = outgoingEdgesIndex[0];
-				int endIndex = outgoingEdgesIndex[1];
-				int[] edgeArray = graph.getEdgeArray();
-				for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
-					if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
-						shortcutExpaned = true;
-						iterator.previous();
-						iterator.add(graph.getEdge(edgeArray[j+3])[1]);
-						nextNode = graph.getEdge(edgeArray[j+3])[1];
-						break;//no second shortcut between two nodes.
+				if(outgoingEdgesIndex != null){
+					int startIndex = outgoingEdgesIndex[0];
+					int endIndex = outgoingEdgesIndex[1];
+					int[] edgeArray = graph.getEdgeArray();
+					for (int j = startIndex; j < endIndex; j+=graph.getLengthOfEdgeElement()) {
+						if(edgeArray[j+1] == nextNode && edgeArray[j+3] != -1){
+							shortcutExpaned = true;
+							iterator.previous();
+							iterator.add(graph.getEdge(edgeArray[j+3])[1]);
+							nextNode = graph.getEdge(edgeArray[j+3])[1];
+							break;//no second shortcut between two nodes.
+						}
 					}
 				}
 			}

@@ -138,17 +138,6 @@ class OfflineFragment : Fragment() {
                     var graphData =
                         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS + "/osm/data/graphData.txt")
                     subGraph = Graph(graphData.absolutePath)
-//                     val latInSubgraph:Boolean =
-//                         start.latitude >= subGraph.minLat &&
-//                             start.latitude <= subGraph.maxLat &&
-//                             end.latitude >= subGraph.minLat &&
-//                             end.latitude <= subGraph.maxLat
-//                     val longiInSubgraph:Boolean =
-//                         start.longitude >= subGraph.minLongi &&
-//                                 start.longitude <= subGraph.maxLongi &&
-//                                 end.longitude >= subGraph.minLongi &&
-//                                 end.longitude <= subGraph.maxLongi
-//                     val startEndInSubgraph:Boolean = latInSubgraph && longiInSubgraph
                     if (true) {
                         var startId = subGraph.nearestNeighbour(start.latitude, start.longitude)
                         var endId = subGraph.nearestNeighbour(end.latitude, end.longitude)
@@ -166,12 +155,29 @@ class OfflineFragment : Fragment() {
         return view
     }
     /**
-     * @param start: id of the start point in the subgraph
-     * @param end: id of tne end point in the subgraph
+     * @param source: id of the start point in the subgraph
+     * @param target: id of tne end point in the subgraph
      */
-    private fun computePath(start: Int, end:Int){
-        var dij = Dijkstra(subGraph,start,end)
-        drawLineWithStringOfCoordinates(dij.shortestPathInLonLat)
+    private fun computePath(source: Int, target:Int){
+        var availiable : Boolean
+        var path : String
+        var dijCH = DijkstraWithCH(subGraph)
+        dijCH.computePath(source,target)
+        availiable = dijCH.pathAvailable
+        if(!dijCH.pathAvailable) {
+            var dij = Dijkstra(subGraph)
+            path = dij.shortestPathInLonLat
+            availiable = dij.pathAvailable
+            dij.reset()
+        }else{
+            path = dijCH.shortestPathInLonLat
+            dijCH.reset()
+        }
+        if (availiable) {
+            drawLineWithStringOfCoordinates(path)
+        }else{
+            Toast.makeText(activity, "No path Available!", Toast.LENGTH_SHORT).show()
+        }
     }
 
 

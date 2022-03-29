@@ -5,26 +5,28 @@ import java.io.IOException;
 
 public class SubgraphEvaluation {
     public static void main(String[] args) {
-        // GraphWithCH graphWithCH = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
-        // //random choose a subgraph with size 1/400 of the original.
-        // double latRange = (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph()) / 20;
-        // double longRange = (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph()) / 20;
-        // double minLat =  graphWithCH.getMinLatOfGraph() + Math.random() * (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph());
-        // double maxLat = minLat + latRange;
-        // double minLong = graphWithCH.getMinLongOfGraph() + Math.random() * (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph());
-        // double maxLong = minLong + longRange;
-        // String subgraphString = graphWithCH.calculateSubgraph(minLat, maxLat, minLong, maxLong);
-        // //write subgraph data in a local file
-        // try {
-        //     FileWriter writer = new FileWriter("subgraph1.txt");
-        //     writer.write(subgraphString);
-        //     writer.close();
-        // } catch (IOException e) {
-        //     System.out.println("error in writing subgraph.");
-        //     e.printStackTrace();
-        // }
+        GraphWithCH graphWithCH = new GraphWithCH("/Users/xinpang/Desktop/Studium/7.Semester/Bachelor Arbeit/CH/ch_germany.txt");
+        //random choose a subgraph with size 1/100 of the original.
+        double latRange = (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph()) / 10;
+        double longRange = (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph()) / 10;
+        double minLat =  graphWithCH.getMinLatOfGraph() + Math.random() * (graphWithCH.getMaxLatOfGraph() - graphWithCH.getMinLatOfGraph());
+        double maxLat = minLat + latRange;
+        double minLong = graphWithCH.getMinLongOfGraph() + Math.random() * (graphWithCH.getMaxLongOfGraph() - graphWithCH.getMinLongOfGraph());
+        double maxLong = minLong + longRange;
+        long downloadGraphTime = System.currentTimeMillis();
+        String subgraphString = graphWithCH.calculateSubgraph(minLat, maxLat, minLong, maxLong);
+        downloadGraphTime = System.currentTimeMillis() - downloadGraphTime;
+        //write subgraph data in a local file
+        try {
+            FileWriter writer = new FileWriter("subgraph10.txt");
+            writer.write(subgraphString);
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("error in writing subgraph.");
+            e.printStackTrace();
+        }
 
-        Subgraph subgraph = new Subgraph("./subgraph1.txt");
+        Subgraph subgraph = new Subgraph("./subgraph10.txt");
 
         int nrOfIteration = 1000;
         int nrOfValidQuery = 0;
@@ -95,5 +97,6 @@ public class SubgraphEvaluation {
         System.out.println("Both yields the path with same cost in : " + equalCost + "/" + nrOfValidQuery);
         System.out.println("Dijkstra with CH has " + nrOfPathWithNodeInCornerCase + " paths, which has at least one edege across the rectagle.");
         System.out.println("Dijkstra with CH yields no path in : " + nrOfNoPathForCH + " cases.");
+        System.out.println("Download subgraph takes: " + downloadGraphTime + "ms.");
     }
 }
